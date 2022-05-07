@@ -55,7 +55,7 @@ impl Chip {
     }
 
     /// Used when erasing 1K sectors
-    pub fn min_erase_sector_size(&self) -> usize {
+    pub fn min_erase_sector_size(&self) -> u32 {
         if self.device_type() == 0x10 {
             4
         } else {

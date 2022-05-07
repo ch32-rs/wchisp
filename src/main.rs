@@ -14,6 +14,7 @@ fn main() -> Result<()> {
 
     flashing.dump_info()?;
     flashing.unprotect()?;
+    flashing.erase_code(4)?;
 
     Ok(())
 }

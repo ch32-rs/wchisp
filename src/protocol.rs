@@ -94,6 +94,10 @@ impl Command {
         Command::WriteConfig { bit_mask, data }
     }
 
+    pub fn erase(sectors: u32) -> Self {
+        Command::Erase { sectors }
+    }
+
     // TODO(visiblity)
     pub fn into_raw(self) -> Result<Vec<u8>> {
         match self {

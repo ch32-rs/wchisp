@@ -97,7 +97,29 @@ impl<T: Transport> Flashing<T> {
         Ok(())
     }
 
+    pub fn flash(&mut self, _raw: &[u8]) -> Result<()> {
+        unimplemented!()
+    }
 
+    pub fn erase_code(&mut self, mut sectors: u32) -> Result<()> {
+        if sectors < self.chip.min_erase_sector_size() {
+            sectors = self.chip.min_erase_sector_size();
+            log::warn!("erase_code: too small sector size, set to {}", sectors);
+        }
+        let erase = Command::erase(sectors);
+        let resp = self.transport.transfer(erase)?;
+        anyhow::ensure!(resp.is_ok(), "erase failed");
+
+        log::info!("Code Flash Erased");
+        Ok(())
+    }
+
+    pub fn erase_data(&mut self, _sectors: u16) -> Result<()> {
+        if self.chip.max_data_flash_size == 0 {
+            anyhow::bail!("chip doesn't support data flash");
+        }
+        unimplemented!()
+    }
 
     pub fn chip_uid(&self) -> &[u8] {
         &self.chip_uid[..self.chip.uid_size()]

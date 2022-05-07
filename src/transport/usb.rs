@@ -58,11 +58,10 @@ impl UsbTransport {
         }
 
         device_handle.set_active_configuration(1)?;
-        let config = device.active_config_descriptor()?;
-        log::debug!("Active config descriptor: {:?}", &config);
+        let _config = device.active_config_descriptor()?;
 
         let descriptor = device.device_descriptor()?;
-        log::debug!("Device descriptor: {:#?}", &descriptor);
+        log::debug!("Device descriptor: {:?}", &descriptor);
 
         device_handle.claim_interface(0)?;
 
