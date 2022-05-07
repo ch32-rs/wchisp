@@ -29,8 +29,8 @@ pub enum Command {
     /// - sum Device UID to a byte, s
     /// - initialize XOR key as [s; 8]
     /// - select 7 bytes(via some rules) from generated random key
-    /// - xor with key[0] to [6]
-    /// - xor key[7] with key[0]
+    /// - key[0] ~ key[6] ^= corresponding selected byte
+    /// - key[7] = key[0] + chip_id
     ///
     /// In many open source implementations, the key is initialized as [0; N],
     /// which makes it easier to do the calculation
@@ -86,6 +86,12 @@ impl Command {
         }
     }
 
+    pub fn isp_key(key: Vec<u8>) -> Self {
+        Command::IspKey {
+            key,
+        }
+    }
+
     pub fn read_config(bit_mask: u8) -> Self {
         Command::ReadConfig { bit_mask }
     }
@@ -96,6 +102,14 @@ impl Command {
 
     pub fn erase(sectors: u32) -> Self {
         Command::Erase { sectors }
+    }
+
+    pub fn program(address: u32, padding: u8, data: Vec<u8>) -> Self {
+        Command::Program {
+            address,
+            padding,
+            data,
+        }
     }
 
     // TODO(visiblity)

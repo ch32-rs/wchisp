@@ -3,7 +3,7 @@
 use anyhow::Result;
 use scroll::{Pread, LE};
 
-use crate::{transport::UsbTransport, Chip, Command, Transport};
+use crate::{constants::SECTOR_SIZE, transport::UsbTransport, Chip, Command, Transport};
 
 pub struct Flashing<T: Transport> {
     transport: T,
@@ -97,8 +97,29 @@ impl<T: Transport> Flashing<T> {
         Ok(())
     }
 
-    pub fn flash(&mut self, _raw: &[u8]) -> Result<()> {
+    // unprotect -> erase -> flash -> verify -> reset
+    pub fn flash(&mut self, raw: &[u8]) -> Result<()> {
+        let sectors = raw.len() / SECTOR_SIZE;
+        self.erase_code(sectors as u32)?;
+
+        let key = self.xor_key();
+        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+
+        let isp_key = Command::isp_key(vec![0; 0x1e]);
+        let resp = self.transport.transfer(isp_key)?;
+        anyhow::ensure!(resp.is_ok(), "isp_key failed");
+        anyhow::ensure!(resp.payload()[0] == key_checksum, "isp_key checksum failed");
+
+        const CHUNK: usize = 56;
+
         unimplemented!()
+    }
+
+    fn flash_chunk(&mut self, address: u32, raw: impl Iterator<Item = u8>) -> Result<()> {
+        let cmd = Command::program(address, 0x00, raw.collect());
+        let resp = self.transport.transfer(cmd)?;
+        anyhow::ensure!(resp.is_ok(), "program 0x{:08x} failed", address);
+        Ok(())
     }
 
     pub fn erase_code(&mut self, mut sectors: u32) -> Result<()> {
@@ -119,6 +140,18 @@ impl<T: Transport> Flashing<T> {
             anyhow::bail!("chip doesn't support data flash");
         }
         unimplemented!()
+    }
+
+    // NOTE: XOR key for all-zero key seed
+    fn xor_key(&self) -> [u8; 8] {
+        let checksum = self
+            .chip_uid
+            .iter()
+            .fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        let mut key = [checksum; 8];
+        key.last_mut()
+            .map(|x| *x = x.overflowing_add(self.chip.chip_id).0);
+        key
     }
 
     pub fn chip_uid(&self) -> &[u8] {

@@ -1,5 +1,6 @@
 
 pub const MAX_PACKET_SIZE: usize = 64;
+pub const SECTOR_SIZE: usize = 1024;
 
 pub mod commands {
     pub const IDENTIFY: u8 = 0xa1;

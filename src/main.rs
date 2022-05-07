@@ -16,5 +16,7 @@ fn main() -> Result<()> {
     flashing.unprotect()?;
     flashing.erase_code(4)?;
 
+    flashing.flash(&b"/tmp/wchisp.bin"[..])?;
+
     Ok(())
 }
