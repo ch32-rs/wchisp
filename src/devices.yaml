@@ -1,0 +1,393 @@
+---
+# # Schema for MCU Chips
+# # The following is generated from official WCHISPTool.
+# - name: <name>
+#   chip_id: 50
+#   mcu_type: 4
+#   skip_chip_id_check: false
+#   max_code_flash_size: 65536
+#   max_data_flash_size: 0
+#   data_flash_start: 0
+#   support_net: false
+#   support_usb: true
+#   support_serial: true
+
+- name: CH561
+  mcu_type: 0
+  max_code_flash_size: 65536
+  max_data_flash_size: 28672
+  support_net: true
+  support_usb: false
+  support_serial: true
+  chip_id: 97
+
+- name: CH563
+  mcu_type: 0
+  max_code_flash_size: 229376
+  max_data_flash_size: 28672
+  support_net: true
+  support_usb: true
+  support_serial: true
+  chip_id: 99
+
+- name: CH565
+  mcu_type: 0
+  max_code_flash_size: 458752
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 101
+  data_flash_start: 0
+
+- name: CH566
+  mcu_type: 0
+  max_code_flash_size: 65536
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 102
+  data_flash_start: 0
+
+- name: CH567
+  mcu_type: 0
+  max_code_flash_size: 196608
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 103
+  data_flash_start: 0
+
+- name: CH568
+  mcu_type: 0
+  max_code_flash_size: 196608
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 104
+  data_flash_start: 0
+
+- name: CH569
+  mcu_type: 0
+  max_code_flash_size: 458752
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 105
+  data_flash_start: 0
+
+- name: CH551
+  mcu_type: 1
+  max_code_flash_size: 10240
+  max_data_flash_size: 128
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 81
+  data_flash_start: 49152
+
+- name: CH552
+  mcu_type: 1
+  max_code_flash_size: 14336
+  max_data_flash_size: 128
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 82
+  data_flash_start: 49152
+
+- name: CH554
+  mcu_type: 1
+  max_code_flash_size: 14336
+  max_data_flash_size: 128
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 84
+  data_flash_start: 49152
+
+- name: CH555
+  mcu_type: 1
+  max_code_flash_size: 61440
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 85
+  data_flash_start: 61440
+
+- name: CH556
+  mcu_type: 1
+  max_code_flash_size: 61440
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 86
+  data_flash_start: 61440
+
+- name: CH557
+  mcu_type: 1
+  max_code_flash_size: 61440
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 87
+  data_flash_start: 61440
+
+- name: CH558
+  mcu_type: 1
+  max_code_flash_size: 32768
+  max_data_flash_size: 5120
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 88
+  data_flash_start: 57344
+
+- name: CH559
+  mcu_type: 1
+  max_code_flash_size: 61440
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 89
+  data_flash_start: 61440
+
+- name: CH544
+  mcu_type: 2
+  max_code_flash_size: 61440
+  max_data_flash_size: 3072
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 68
+  data_flash_start: 61440
+
+- name: CH545
+  mcu_type: 2
+  max_code_flash_size: 61440
+  max_data_flash_size: 3072
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 69
+  data_flash_start: 61440
+
+- name: CH546
+  mcu_type: 2
+  max_code_flash_size: 32768
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 70
+  data_flash_start: 61440
+
+- name: CH547
+  mcu_type: 2
+  max_code_flash_size: 61440
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 71
+  data_flash_start: 61440
+
+- name: CH548
+  mcu_type: 2
+  max_code_flash_size: 32768
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 72
+  data_flash_start: 61440
+
+- name: CH549
+  mcu_type: 2
+  max_code_flash_size: 61440
+  max_data_flash_size: 1024
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 73
+  data_flash_start: 61440
+
+- name: CH571
+  mcu_type: 3
+  max_code_flash_size: 196608
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 113
+  data_flash_start: 256000
+
+- name: CH573
+  mcu_type: 3
+  max_code_flash_size: 458752
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 115
+  data_flash_start: 256000
+
+- name: CH577
+  mcu_type: 3
+  max_code_flash_size: 131072
+  max_data_flash_size: 2048
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 119
+  data_flash_start: 131072
+
+- name: CH578
+  mcu_type: 3
+  max_code_flash_size: 163840
+  max_data_flash_size: 2048
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 120
+  data_flash_start: 163840
+
+- name: CH579
+  mcu_type: 3
+  max_code_flash_size: 256000
+  max_data_flash_size: 2048
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 121
+  data_flash_start: 256000
+
+- name: CH32F103
+  mcu_type: 4
+  max_code_flash_size: 65536
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 50
+  data_flash_start: 0
+  skip_chip_id_check: true
+
+- name: CH32V103
+  mcu_type: 5
+  max_code_flash_size: 65536
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 50
+  data_flash_start: 0
+  skip_chip_id_check: true
+
+- name: CH581
+  mcu_type: 6
+  max_code_flash_size: 196608
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 129
+  data_flash_start: 0
+
+- name: CH582
+  mcu_type: 6
+  max_code_flash_size: 458752
+  max_data_flash_size: 32768
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 130
+  data_flash_start: 0
+
+- name: CH583
+  mcu_type: 6
+  max_code_flash_size: 458752
+  max_data_flash_size: 557056
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 131
+  data_flash_start: 0
+
+- name: CH32V303
+  mcu_type: 7
+  max_code_flash_size: 491520
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 48
+  data_flash_start: 0
+
+- name: CH32V305
+  mcu_type: 7
+  max_code_flash_size: 491520
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 80
+  data_flash_start: 0
+
+- name: CH32V307
+  mcu_type: 7
+  max_code_flash_size: 491520
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 112
+  data_flash_start: 0
+
+- name: CH32F203
+  mcu_type: 8
+  max_code_flash_size: 491520
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 48
+  data_flash_start: 0
+
+- name: CH32F205
+  mcu_type: 8
+  max_code_flash_size: 491520
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 80
+  data_flash_start: 0
+
+- name: CH32F207
+  mcu_type: 8
+  max_code_flash_size: 491520
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 112
+  data_flash_start: 0
+
+- name: CH32F208
+  mcu_type: 8
+  max_code_flash_size: 491520
+  max_data_flash_size: 0
+  support_net: false
+  support_usb: true
+  support_serial: true
+  chip_id: 128
+  data_flash_start: 0
