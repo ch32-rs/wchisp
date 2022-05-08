@@ -6,7 +6,7 @@ use anyhow::Result;
 use scroll::{Pread, LE};
 
 use crate::{
-    constants::{CFG_MASK_RDPR_USER_DATA_WPR, SECTOR_SIZE, CFG_MASK_ALL},
+    constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR, SECTOR_SIZE},
     transport::UsbTransport,
     Chip, Command, Transport,
 };
@@ -65,7 +65,7 @@ impl Flashing<UsbTransport> {
 }
 
 impl<T: Transport> Flashing<T> {
-    pub fn dump_info(&self) -> Result<()> {
+    pub fn dump_info(&mut self) -> Result<()> {
         log::info!(
             "Chip: {} (Code Flash: {}KiB, Data EEPROM: {}KiB)",
             self.chip,
@@ -79,6 +79,7 @@ impl<T: Transport> Flashing<T> {
         );
 
         log::info!("Code Flash protected: {}", self.code_flash_protected);
+        self.dump_config()?;
         Ok(())
     }
 
@@ -182,8 +183,8 @@ impl<T: Transport> Flashing<T> {
         let padding = rand::random();
         let cmd = Command::verify(address, padding, xored.collect());
         let resp = self.transport.transfer(cmd)?;
-        anyhow::ensure!(resp.is_ok(), "verify 0x{:08x} failed", address);
-        anyhow::ensure!(resp.payload()[0]==0x00, "Verify failed, mismatch");
+        anyhow::ensure!(resp.is_ok(), "verify response failed");
+        anyhow::ensure!(resp.payload()[0] == 0x00, "Verify failed, mismatch");
         Ok(())
     }
 
@@ -209,6 +210,21 @@ impl<T: Transport> Flashing<T> {
             anyhow::bail!("chip doesn't support data flash");
         }
         unimplemented!("TODO")
+    }
+
+    fn dump_config(&mut self) -> Result<()> {
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        let regs = &resp.payload()[2..];
+        log::info!("RDPR:  0x{:02X}{:02X}", regs[0], regs[1]);
+        log::info!("USER:  0x{:02X}{:02X}", regs[2], regs[3]);
+        log::info!("USER0: 0x{:02X}{:02X}", regs[4], regs[5]);
+        log::info!("USER1: 0x{:02X}{:02X}", regs[6], regs[7]);
+        log::info!("WPR:   0x{:02X}{:02X}{:02X}{:02X}", regs[8], regs[9], regs[10], regs[11]);
+
+        Ok(())
     }
 
     // NOTE: XOR key for all-zero key seed
