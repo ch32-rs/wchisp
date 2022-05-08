@@ -131,6 +131,7 @@ pub fn objcopy_binary(elf_data: &[u8]) -> Result<Vec<u8>> {
                     flags
                 );
             let (segment_offset, segment_filesize) = segment.file_range(endian);
+            let mut section_names = vec![];
             for section in binary.sections() {
                 let (section_offset, section_filesize) = match section.file_range() {
                     Some(range) => range,
@@ -144,7 +145,7 @@ pub fn objcopy_binary(elf_data: &[u8]) -> Result<Vec<u8>> {
                 if segment_offset <= section_offset
                     && segment_offset + segment_filesize >= section_offset + section_filesize
                 {
-                    log::info!(
+                    log::debug!(
                         "Matching section: {:?} offset: 0x{:x} size: 0x{:x}",
                         section.name()?,
                         section_offset,
@@ -153,10 +154,12 @@ pub fn objcopy_binary(elf_data: &[u8]) -> Result<Vec<u8>> {
                     for (offset, relocation) in section.relocations() {
                         log::debug!("Relocation: offset={}, relocation={:?}", offset, relocation);
                     }
+                    section_names.push(section.name()?.to_owned());
                 }
             }
             let section_data = &elf_data[segment_offset as usize..][..segment_filesize as usize];
             sections.push((p_paddr as u32, section_data.into()));
+            log::info!("Section names: {:?}", section_names);
         }
     }
 
