@@ -29,7 +29,7 @@ impl UsbTransport {
                     .unwrap_or(false)
             })
             .find_map(|device| {
-                log::debug!("Found USB Device {:?}", device);
+                log::info!("Found USB Device {:?}", device);
                 Some(device)
             })
             .ok_or(anyhow::format_err!("No WCH ISP USB device found"))?;
@@ -60,8 +60,7 @@ impl UsbTransport {
         device_handle.set_active_configuration(1)?;
         let _config = device.active_config_descriptor()?;
 
-        let descriptor = device.device_descriptor()?;
-        log::debug!("Device descriptor: {:?}", &descriptor);
+        let _descriptor = device.device_descriptor()?;
 
         device_handle.claim_interface(0)?;
 
