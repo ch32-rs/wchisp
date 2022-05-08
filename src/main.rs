@@ -70,7 +70,7 @@ fn main() -> Result<()> {
         Cli::Verify { path } => {
             let binary = wchisp::format::read_firmware_from_file(path)?;
             log::info!("firmware size: {}", binary.len());
-            // flashing.verify(&binary)?;
+            flashing.verify(&binary)?;
         }
         _ => unimplemented!(),
     }
