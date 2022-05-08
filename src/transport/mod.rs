@@ -1,3 +1,4 @@
+//! Abstract Device transport interface.
 use anyhow::Result;
 
 use crate::protocol::{Command, Response};
@@ -13,15 +14,13 @@ pub trait Transport {
     fn recv_raw(&mut self) -> Result<Vec<u8>>;
 
     fn transfer(&mut self, cmd: Command) -> Result<Response> {
-        let raw = &cmd.into_raw()?;
-        log::debug!("=> {}", hex::encode(&raw));
-        self.send_raw(&raw)?;
+        let req = &cmd.into_raw()?;
+        log::debug!("=> {}", hex::encode(&req));
+        self.send_raw(&req)?;
 
-        let raw = self.recv_raw()?;
-        log::debug!("<= {}", hex::encode(&raw));
-        Response::from_raw(&raw)
+        let resp = self.recv_raw()?;
+        anyhow::ensure!(req[0] == resp[0], "response command type mismatch");
+        log::debug!("<= {}", hex::encode(&resp));
+        Response::from_raw(&resp)
     }
 }
-
-/// A transport which can
-pub trait MultiTransport: Transport {}

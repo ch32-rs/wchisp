@@ -1,4 +1,4 @@
-//! Chip flashing logic.
+//! Chip flashing routine
 use std::thread::sleep;
 use std::time::Duration;
 

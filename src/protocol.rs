@@ -29,8 +29,8 @@ pub enum Command {
     /// - sum Device UID to a byte, s
     /// - initialize XOR key as [s; 8]
     /// - select 7 bytes(via some rules) from generated random key
-    /// - key[0] ~ key[6] ^= corresponding selected byte
-    /// - key[7] = key[0] + chip_id
+    /// - `key[0] ~ key[6] ^= corresponding selected byte`
+    /// - `key[7] = key[0] + chip_id`
     ///
     /// In many open source implementations, the key is initialized as [0; N],
     /// which makes it easier to do the calculation
