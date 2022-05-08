@@ -18,6 +18,13 @@ This tool is a work in progress.
 > wchisp flash ./path/to/firmware.{bin,hex,elf}
 ```
 
+## Tested On
+
+This tool should work on most WCH MCU chips. But I haven't tested it on any other chips.
+
+- [x] CH32V307(VCT6)
+- ... (feel free to open an issue whether it works on your chip or not)
+
 ## Related Works (Many Thanks!)
 
 - https://github.com/MarsTechHAN/ch552tool
