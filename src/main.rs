@@ -67,6 +67,11 @@ fn main() -> Result<()> {
             sleep(Duration::from_secs(1));
             flashing.reset()?
         }
+        Cli::Verify { path } => {
+            let binary = wchisp::format::read_firmware_from_file(path)?;
+            log::info!("firmware size: {}", binary.len());
+            // flashing.verify(&binary)?;
+        }
         _ => unimplemented!(),
     }
 

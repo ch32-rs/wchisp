@@ -3,7 +3,10 @@ use std::str;
 use std::{borrow::Cow, path::Path};
 
 use anyhow::Result;
-use object::{elf::FileHeader32, Endianness, Object, ObjectSection, SectionKind};
+use object::{
+    elf::FileHeader32, elf::PT_LOAD, read::elf::FileHeader, read::elf::ProgramHeader, Endianness,
+    Object, ObjectSection,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FirmwareFormat {
@@ -18,7 +21,7 @@ pub fn read_firmware_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
     let raw = std::fs::read(p)?;
 
     let format = guess_format(p, &raw);
-    log::info!("read firmare file format as {:?}", format);
+    log::info!("Read {} as {:?} format", p.display(), format);
     match format {
         FirmwareFormat::PlainHex => Ok(hex::decode(
             raw.into_iter()
@@ -101,35 +104,62 @@ pub fn objcopy_binary(elf_data: &[u8]) -> Result<Vec<u8>> {
         object::FileKind::Elf32 => (),
         _ => anyhow::bail!("cannot read file as ELF32 format"),
     }
+    let elf_header = FileHeader32::<Endianness>::parse(elf_data)?;
     let binary = object::read::elf::ElfFile::<FileHeader32<Endianness>>::parse(elf_data)?;
 
     let mut sections = vec![];
 
-    for section in binary.sections() {
-        if section.data().unwrap().is_empty() {
-            continue;
-        }
-        if section.uncompressed_data().unwrap().is_empty() {
-            continue;
-        }
-        let section_data = section.uncompressed_data().unwrap();
-        if section.kind() == SectionKind::Text
-            || section.kind() == SectionKind::Data
-            || section.kind() == SectionKind::ReadOnlyData
-        {
-            log::debug!(
-                "found {}({:?}) section of {} bytes at 0x{:x}",
-                section.name().unwrap_or_default(),
-                section.kind(),
-                section_data.len(),
-                section.address()
-            );
-            sections.push((section.address() as u32, section_data));
-            if section.relocations().count() > 0 {
-                anyhow::bail!("TODO: support relocation ")
+    let endian = elf_header.endian()?;
+
+    // Ref: https://docs.oracle.com/cd/E19683-01/816-1386/chapter6-83432/index.html
+    for segment in elf_header.program_headers(elf_header.endian()?, elf_data)? {
+        // Get the physical address of the segment. The data will be programmed to that location.
+        let p_paddr: u64 = segment.p_paddr(endian).into();
+        // Virtual address
+        let p_vaddr: u64 = segment.p_vaddr(endian).into();
+
+        let flags = segment.p_flags(endian);
+
+        let segment_data = segment
+            .data(endian, elf_data)
+            .map_err(|_| anyhow::format_err!("Failed to access data for an ELF segment."))?;
+        if !segment_data.is_empty() && segment.p_type(endian) == PT_LOAD {
+            log::info!(
+                    "Found loadable segment, physical address: {:#010x}, virtual address: {:#010x}, flags: {:#x}",
+                    p_paddr,
+                    p_vaddr,
+                    flags
+                );
+            let (segment_offset, segment_filesize) = segment.file_range(endian);
+            for section in binary.sections() {
+                let (section_offset, section_filesize) = match section.file_range() {
+                    Some(range) => range,
+                    None => continue,
+                };
+                if section_filesize == 0 {
+                    continue;
+                }
+
+                // contains range
+                if segment_offset <= section_offset
+                    && segment_offset + segment_filesize >= section_offset + section_filesize
+                {
+                    log::info!(
+                        "Matching section: {:?} offset: 0x{:x} size: 0x{:x}",
+                        section.name()?,
+                        section_offset,
+                        section_filesize
+                    );
+                    for (offset, relocation) in section.relocations() {
+                        log::debug!("Relocation: offset={}, relocation={:?}", offset, relocation);
+                    }
+                }
             }
+            let section_data = &elf_data[segment_offset as usize..][..segment_filesize as usize];
+            sections.push((p_paddr as u32, section_data.into()));
         }
     }
+
     if sections.is_empty() {
         anyhow::bail!("empty ELF file");
     }

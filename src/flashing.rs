@@ -5,7 +5,11 @@ use std::time::Duration;
 use anyhow::Result;
 use scroll::{Pread, LE};
 
-use crate::{constants::SECTOR_SIZE, transport::UsbTransport, Chip, Command, Transport};
+use crate::{
+    constants::{CFG_MASK_RDPR_USER_DATA_WPR, SECTOR_SIZE, CFG_MASK_ALL},
+    transport::UsbTransport,
+    Chip, Command, Transport,
+};
 
 pub struct Flashing<T: Transport> {
     transport: T,
@@ -27,7 +31,7 @@ impl Flashing<UsbTransport> {
         let chip = Chip::guess(resp.payload()[0], resp.payload()[1])?;
         log::debug!("found chip: {}", chip);
 
-        let read_conf = Command::read_config(0x1f);
+        let read_conf = Command::read_config(CFG_MASK_ALL);
         let resp = transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
 
@@ -82,7 +86,7 @@ impl<T: Transport> Flashing<T> {
         if !force && !self.code_flash_protected {
             return Ok(());
         }
-        let read_conf = Command::read_config(0x1f);
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
         let resp = self.transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
 
@@ -93,7 +97,7 @@ impl<T: Transport> Flashing<T> {
         // WPR register
         config[8..12].copy_from_slice(&[0xff; 4]);
 
-        let write_conf = Command::write_config(0x1f, config);
+        let write_conf = Command::write_config(CFG_MASK_RDPR_USER_DATA_WPR, config);
         let resp = self.transport.transfer(write_conf)?;
         anyhow::ensure!(resp.is_ok(), "write_config failed");
 
@@ -135,7 +139,7 @@ impl<T: Transport> Flashing<T> {
         }
         // NOTE: require a write action of empty data for success flashing
         self.flash_chunk(address, &[], key)?;
-        log::info!("Code Flash flashed, {} bytes written", address);
+        log::info!("Code flash {} bytes written", address);
 
         Ok(())
     }
