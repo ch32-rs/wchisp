@@ -80,14 +80,13 @@ impl<T: Transport> Flashing<T> {
                 .collect::<Vec<_>>()
                 .join("-")
         );
+        // FIXME: actual version format?
         log::info!(
-            "BTVER(bootloader ver): {}",
-            self.bootloader_version[1..]
-                .iter()
-                .copied()
-                .map(|x| format!("{}", x))
-                .collect::<Vec<_>>()
-                .join(".")
+            "BTVER(bootloader ver): {}{}.{}{}",
+            self.bootloader_version[0],
+            self.bootloader_version[1],
+            self.bootloader_version[2],
+            self.bootloader_version[3]
         );
 
         log::info!("Code Flash protected: {}", self.code_flash_protected);
