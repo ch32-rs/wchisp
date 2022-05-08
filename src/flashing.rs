@@ -135,6 +135,7 @@ impl<T: Transport> Flashing<T> {
         }
         // NOTE: require a write action of empty data for success flashing
         self.flash_chunk(address, &[], key)?;
+        log::info!("Code Flash flashed, {} bytes written", address);
 
         Ok(())
     }
