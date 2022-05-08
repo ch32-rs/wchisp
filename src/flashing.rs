@@ -72,10 +72,22 @@ impl<T: Transport> Flashing<T> {
             self.chip.max_code_flash_size / 1024,
             self.chip.max_data_flash_size / 1024
         );
-        log::info!("Chip UID: {}", hex::encode(&self.chip_uid));
+        log::info!(
+            "Chip UID: {}",
+            self.chip_uid
+                .iter()
+                .map(|x| format!("{:02x}", x))
+                .collect::<Vec<_>>()
+                .join("-")
+        );
         log::info!(
             "BTVER(bootloader ver): {}",
-            hex::encode(&self.bootloader_version[1..])
+            self.bootloader_version[1..]
+                .iter()
+                .copied()
+                .map(|x| format!("{}", x))
+                .collect::<Vec<_>>()
+                .join(".")
         );
 
         log::info!("Code Flash protected: {}", self.code_flash_protected);
@@ -222,7 +234,13 @@ impl<T: Transport> Flashing<T> {
         log::info!("USER:  0x{:02X}{:02X}", regs[2], regs[3]);
         log::info!("USER0: 0x{:02X}{:02X}", regs[4], regs[5]);
         log::info!("USER1: 0x{:02X}{:02X}", regs[6], regs[7]);
-        log::info!("WPR:   0x{:02X}{:02X}{:02X}{:02X}", regs[8], regs[9], regs[10], regs[11]);
+        log::info!(
+            "WPR:   0x{:02X}{:02X}{:02X}{:02X}",
+            regs[8],
+            regs[9],
+            regs[10],
+            regs[11]
+        );
 
         Ok(())
     }
