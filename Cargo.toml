@@ -17,15 +17,21 @@ default = ["vendored-libusb"]
 
 vendored-libusb = ["rusb/vendored"]
 
-
 [dependencies]
+rand = "0.8"
+log = "0.4.8"
+serde = { version = "1.0.104", features = ["derive"] }
+serde_yaml = "0.8.11"
 clap = { version = "3.1", features = ["derive"] }
 anyhow = "1.0"
 rusb = { version = "0.9.1" }
 bitfield = "0.13.2"
 scroll = "0.11"
-serde = { version = "1.0.104", features = ["derive"] }
-serde_yaml = "0.8.11"
-log = "0.4.8"
-hex = "0.4"
 simplelog = "0.12"
+hex = "0.4"
+ihex = "3"
+object = { version = "0.28.3", default-features = false, features = [
+    "elf",
+    "read_core",
+    "std",
+] }

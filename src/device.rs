@@ -28,7 +28,13 @@ pub struct Chip {
 
 impl ::std::fmt::Display for Chip {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        write!(f, "{}(0x{:02x}{:02x})", self.name, self.chip_id, self.device_type())
+        write!(
+            f,
+            "{}(0x{:02x}{:02x})",
+            self.name,
+            self.chip_id,
+            self.device_type()
+        )
     }
 }
 
@@ -38,24 +44,33 @@ impl Chip {
         let yaml: Vec<Chip> = serde_yaml::from_str(&include_str!("devices.yaml"))?;
         yaml.into_iter()
             .find(|chip| {
-                chip.device_type() == device_type
-                    && (chip.skip_chip_id_check() || chip.chip_id == chip_id)
+                if chip.device_type() == device_type {
+                    if chip.skip_chip_id_check() {
+                        log::warn!("Skip chip ID check for {}", chip);
+                        return true;
+                    }
+                    if chip.chip_id == chip_id {
+                        return true;
+                    }
+                }
+                false
             })
             .ok_or_else(|| {
                 anyhow::format_err!(
-                    "Can not find chip_id={:02x} in DB, please fire an issue",
-                    chip_id
+                    "Can not find chip_id={:02x} device_type={:02x} in DB, please fire an issue for new MCU type",
+                    chip_id,
+                    device_type
                 )
             })
     }
 
     /// DeviceType = ChipSeries = SerialNumber = McuType + 0x10
-    pub fn device_type(&self) -> u8 {
+    pub const fn device_type(&self) -> u8 {
         self.mcu_type + 0x10
     }
 
     /// Used when erasing 1K sectors
-    pub fn min_erase_sector_size(&self) -> u32 {
+    pub const fn min_erase_sector_number(&self) -> u32 {
         if self.device_type() == 0x10 {
             4
         } else {
@@ -64,7 +79,7 @@ impl Chip {
     }
 
     /// Used when calculating XOR key
-    pub fn uid_size(&self) -> usize {
+    pub const fn uid_size(&self) -> usize {
         if self.device_type() == 0x11 {
             4
         } else {
@@ -73,7 +88,7 @@ impl Chip {
     }
 
     /// Only checks device type, not chip id.
-    pub fn skip_chip_id_check(&self) -> bool {
+    pub const fn skip_chip_id_check(&self) -> bool {
         self.skip_chip_id_check
         // i.e. self.device_type() == 0x14 || self.device_type() == 0x15
     }

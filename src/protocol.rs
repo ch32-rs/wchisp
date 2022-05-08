@@ -81,15 +81,11 @@ impl Command {
     }
 
     pub fn isp_end(reason: u8) -> Self {
-        Command::IspEnd {
-            reason,
-        }
+        Command::IspEnd { reason }
     }
 
     pub fn isp_key(key: Vec<u8>) -> Self {
-        Command::IspKey {
-            key,
-        }
+        Command::IspKey { key }
     }
 
     pub fn read_config(bit_mask: u8) -> Self {
@@ -106,6 +102,14 @@ impl Command {
 
     pub fn program(address: u32, padding: u8, data: Vec<u8>) -> Self {
         Command::Program {
+            address,
+            padding,
+            data,
+        }
+    }
+
+    pub fn verify(address: u32, padding: u8, data: Vec<u8>) -> Self {
+        Command::Verify {
             address,
             padding,
             data,
@@ -149,10 +153,11 @@ impl Command {
                 // CMD, SIZE, ADDR, PADDING, DATA
                 let mut buf = vec![0u8; 1 + 2 + 4 + 1 + data.len()];
                 buf[0] = commands::PROGRAM;
-                buf.pwrite_with(1 + data.len() as u16, 1, scroll::LE)?;
                 buf.pwrite_with(address, 3, scroll::LE)?;
-                buf[6] = padding;
-                buf[7..].copy_from_slice(&data);
+                buf[7] = padding;
+                buf[8..].copy_from_slice(&data);
+                let payload_size = buf.len() as u16 - 3;
+                buf.pwrite_with(payload_size, 1, scroll::LE)?;
                 Ok(buf)
             }
             Command::Verify {
@@ -162,10 +167,11 @@ impl Command {
             } => {
                 let mut buf = vec![0u8; 1 + 2 + 4 + 1 + data.len()];
                 buf[0] = commands::VERIFY;
-                buf.pwrite_with(1 + data.len() as u16, 1, scroll::LE)?;
                 buf.pwrite_with(address, 3, scroll::LE)?;
-                buf[6] = padding;
-                buf[7..].copy_from_slice(&data);
+                buf[7] = padding;
+                buf[8..].copy_from_slice(&data);
+                let payload_size = buf.len() as u16 - 3;
+                buf.pwrite_with(payload_size, 1, scroll::LE)?;
                 Ok(buf)
             }
             Command::ReadConfig { bit_mask } => {

@@ -1,6 +1,18 @@
-
 pub const MAX_PACKET_SIZE: usize = 64;
 pub const SECTOR_SIZE: usize = 1024;
+
+/// RDPR: Read Protection
+/// USER: User Config Byte (normally in Register Map datasheet)
+/// WPR:  Write Protection Mask, 1=unprotected, 0=protected
+/// | BYTE0  | BYTE1  | BYTE2  | BYTE3  |
+/// |--------|--------|--------|--------|
+/// | RDPR   | nRDPR  | USER   | nUSER  |
+/// | DATA0  | nDATA0 | DATA1  | nDATA1 |
+/// | WPR0   | WPR1   | WPR2   | WPR3   |
+pub const CFG_MASK_RDPR_USER_DATA_WPR: u8 = 0x07;
+pub const CFG_MASK_BTVER: u8 = 0x08;
+pub const CFG_MASK_UID: u8 = 0x10;
+pub const CFG_MASK_ALL: u8 = 0x1f;
 
 pub mod commands {
     pub const IDENTIFY: u8 = 0xa1;
@@ -18,4 +30,3 @@ pub mod commands {
     pub const READ_OTP: u8 = 0xc4;
     pub const SET_BAUD: u8 = 0xc5;
 }
-
