@@ -183,6 +183,7 @@ impl<T: Transport> Flashing<T> {
         let cmd = Command::verify(address, padding, xored.collect());
         let resp = self.transport.transfer(cmd)?;
         anyhow::ensure!(resp.is_ok(), "verify 0x{:08x} failed", address);
+        anyhow::ensure!(resp.payload()[0]==0x00, "Verify failed, mismatch");
         Ok(())
     }
 

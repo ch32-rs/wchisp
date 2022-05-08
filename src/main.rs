@@ -35,7 +35,7 @@ enum Cli {
 
 fn main() -> Result<()> {
     let _ = simplelog::TermLogger::init(
-        simplelog::LevelFilter::Info,
+        simplelog::LevelFilter::Debug,
         simplelog::Config::default(),
         simplelog::TerminalMode::Mixed,
         simplelog::ColorChoice::Auto,
@@ -60,7 +60,7 @@ fn main() -> Result<()> {
         Cli::Flash { path } => {
             flashing.dump_info()?;
             let binary = wchisp::format::read_firmware_from_file(path)?;
-            log::info!("firmware size: {}", binary.len());
+            log::info!("Firmware size: {}", binary.len());
             flashing.flash(&binary)?;
             sleep(Duration::from_secs(1));
             flashing.verify(&binary)?;
@@ -69,8 +69,9 @@ fn main() -> Result<()> {
         }
         Cli::Verify { path } => {
             let binary = wchisp::format::read_firmware_from_file(path)?;
-            log::info!("firmware size: {}", binary.len());
+            log::info!("Firmware size: {}", binary.len());
             flashing.verify(&binary)?;
+            log::info!("Verified!");
         }
         _ => unimplemented!(),
     }
