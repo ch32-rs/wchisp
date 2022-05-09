@@ -10,15 +10,15 @@ description: Low-and-medium-density general-purpose Cortex-M3
 variants:
   - name: CH32F203C8U6
     chip_id: 0x30
-    code_flash: 64KiB
+    flash_size: 64K
   - name: CH32F203C8T6
     chip_id: 0x31
-    code_flash: 64KiB
+    flash_size: 64K
   # FIXME: CH32F203K8T6 is not listed in config file, this is a guess
   - name: CH32F203K8T6
     chip_id: 0x32
-    code_flash: 64KiB
+    flash_size: 64K
   - name: CH32F203C6T6
     chip_id: 0x33
-    code_flash: 32KiB
+    flash_size: 32K
 

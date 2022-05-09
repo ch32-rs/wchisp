@@ -9,48 +9,49 @@ description: 1, 2, 4, 5, 7, 8, 9
 variants:
   - name: CH551
     chip_id: 0x51
-    code_flash: 10240
-    data_flash: 128
-    data_flash_start: 49152
+    flash_size: 10K
+    eeprom_size: 128
+    eeprom_start_addr: 10K
 
   - name: CH552
     chip_id: 0x52
-    code_flash: 14336
-    data_flash: 128
-    data_flash_start: 49152
+    # FIXME: 16K or 14K
+    flash_size: 14K
+    eeprom_size: 128
+    eeprom_start_addr: 14K
 
   - name: CH554
     chip_id: 0x53
-    code_flash: 14336
-    data_flash: 128
-    data_flash_start: 49152
+    flash_size: 14K
+    eeprom_size: 128
+    eeprom_start_addr: 14K
 
   - name: CH555
     chip_id: 0x55
-    code_flash: 61440
-    data_flash: 1024
-    data_flash_start: 61440
+    flash_size: 61440
+    eeprom_size: 1K
+    eeprom_start_addr: 61440
 
   - name: CH556
     chip_id: 0x56
-    code_flash: 61440
-    data_flash: 1024
-    data_flash_start: 61440
+    flash_size: 61440
+    eeprom_size: 1K
+    eeprom_start_addr: 61440
 
   - name: CH557
     chip_id: 0x57
-    code_flash: 61440
-    data_flash: 1024
-    data_flash_start: 61440
+    flash_size: 61440
+    eeprom_size: 1024
+    eeprom_start_addr: 61440
 
   - name: CH558
     chip_id: 0x58
-    code_flash: 32768
-    data_flash: 5120
-    data_flash_start: 57344
+    flash_size: 32768
+    eeprom_size: 5120
+    eeprom_start_addr: 61440
 
   - name: CH559
     chip_id: 0x59
-    code_flash: 61440
-    data_flash: 1024
-    data_flash_start: 61440
+    flash_size: 61440
+    eeprom_size: 1024
+    eeprom_start_addr: 61440

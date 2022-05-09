@@ -8,31 +8,31 @@ support_net: false
 description: ""
 variants:
   - name: CH571
-    code_flash: 196608
-    data_flash: 32768
-    chip_id: 113
-    data_flash_start: 256000
+    chip_id: 0x71
+    flash_size: 196608
+    eeprom_size: 32768
+    eeprom_start_addr: 196608
 
   - name: CH573
-    code_flash: 458752
-    data_flash: 32768
-    chip_id: 115
-    data_flash_start: 256000
+    chip_id: 0x73
+    flash_size: 458752
+    eeprom_size: 32768
+    eeprom_start_addr: 458752
 
   - name: CH577
-    code_flash: 131072
-    data_flash: 2048
-    chip_id: 119
-    data_flash_start: 131072
+    chip_id: 0x77
+    flash_size: 131072
+    eeprom_size: 2048
+    eeprom_start_addr: 131072
 
   - name: CH578
-    code_flash: 163840
-    data_flash: 2048
-    chip_id: 120
-    data_flash_start: 163840
+    chip_id: 0x58
+    flash_size: 163840
+    eeprom_size: 2048
+    eeprom_start_addr: 163840
 
   - name: CH579
-    code_flash: 256000
-    data_flash: 2048
-    chip_id: 121
-    data_flash_start: 256000
+    chip_id: 0x79
+    flash_size: 256000
+    eeprom_size: 2048
+    eeprom_start_addr: 256000

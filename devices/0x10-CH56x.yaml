@@ -8,9 +8,9 @@ variants:
   # use 0x46 to probe
   - name: CH561
     chip_id: 0x61
-    alt_chip_id: [0x46]
-    code_flash: 64KiB
-    data_flash: 28KiB
+    alt_chip_ids: [0x46]
+    flash_size: 64K
+    eeprom_size: 28K
     support_usb: false
     support_net: true
 
@@ -18,45 +18,45 @@ variants:
   - name: CH563
     chip_id: 0x63
     # 0x45 for CH563_E?
-    alt_chip_id: [0x42, 0x43, 0x44, 0x45]
-    code_flash: 224KiB
-    data_flash: 28KiB
+    alt_chip_ids: [0x42, 0x43, 0x44, 0x45]
+    flash_size: 224K
+    eeprom_size: 28K
     support_usb: true
     support_net: true
 
   - name: CH565
     chip_id: 0x65
-    code_flash: 458752
-    data_flash: 32768
+    flash_size: 448K
+    eeprom_size: 32K
     support_usb: true
     support_net: false
-    data_flash_start: 0
+    eeprom_start_addr: 0
 
   - name: CH566
     chip_id: 0x66
-    code_flash: 65536
-    data_flash: 32768
+    flash_size: 64K
+    eeprom_size: 32K
     support_usb: true
     support_net: false
-    data_flash_start: 0
+    eeprom_start_addr: 0
 
   - name: CH567
     chip_id: 0x67
-    code_flash: 192KiB
-    data_flash: 32KiB
+    flash_size: 192K
+    eeprom_size: 32K
     support_usb: true
     support_net: false
 
   - name: CH568
     chip_id: 0x68
-    code_flash: 192KiB
-    data_flash: 32KiB
+    flash_size: 192K
+    eeprom_size: 32K
     support_usb: true
     support_net: false
 
   - name: CH569
     chip_id: 0x69
-    code_flash: 448KiB
-    data_flash: 32KiB
+    flash_size: 448K
+    eeprom_size: 32K
     support_usb: true
     support_net: false

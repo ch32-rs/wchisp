@@ -9,18 +9,18 @@ description: ""
 variants:
   - name: CH581
     chip_id: 0x81
-    code_flash: 196608
-    data_flash: 32768
-    data_flash_start: 0
+    flash_size: 196608
+    eeprom_size: 32768
+    eeprom_start_addr: 0
 
   - name: CH582
     chip_id: 0x82
-    code_flash: 458752
-    data_flash: 32768
-    data_flash_start: 0
+    flash_size: 458752
+    eeprom_size: 32768
+    eeprom_start_addr: 0
 
   - name: CH583
     chip_id: 0x83
-    code_flash: 458752
-    data_flash: 557056
-    data_flash_start: 0
+    flash_size: 458752
+    eeprom_size: 557056
+    eeprom_start_addr: 0

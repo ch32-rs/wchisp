@@ -8,8 +8,8 @@ support_serial: true
 variants:
   - name: CH32F103C6T6
     chip_id: 0x32
-    code_flash: 32KiB
+    flash_size: 32K
   - name: CH32F103(C8T6|C8U6|R8T6)
     chip_id: 0x33
-    alt_chip_id: ALL
-    code_flash: 64KiB
+    alt_chip_ids: ["ALL"]
+    flash_size: 64K

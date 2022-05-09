@@ -8,27 +8,27 @@ support_serial: true
 variants:
   - name: CH32V305RBT6
     chip_id: 0x50
-    code_flash: 128KiB
+    flash_size: 128K
   - name: CH32V307VCT6
     chip_id: 0x70
-    code_flash: 256KiB
+    flash_size: 256K
   - name: CH32V307RCT6
     chip_id: 0x71
-    code_flash: 256KiB
+    flash_size: 256K
   - name: CH32V307WCU6
     chip_id: 0x73
-    code_flash: 256KiB
+    flash_size: 256K
   - name: CH32V303VCT6
     chip_id: 0x30
-    code_flash: 256KiB
+    flash_size: 256K
   - name: CH32V303RCT6
     chip_id: 0x31
-    code_flash: 256KiB
+    flash_size: 256K
   - name: CH32V303RBT6
     chip_id: 0x32
-    code_flash: 128KiB
+    flash_size: 128K
   - name: CH32V303CBT6
     chip_id: 0x33
-    code_flash: 128KiB
+    flash_size: 128K
 
 

@@ -5,40 +5,47 @@ device_type: 0x12
 support_usb: true
 support_serial: true
 support_net: false
-description: CH540-CH543 is not supported
+description: CH540-CH542 is not supported
 variants:
+  - name: CH543
+    chip_id: 67
+    flash_size: 14336
+    eeprom_size: 1024
+    eeprom_start_addr: 14336
+    support_serial: false
+
   - name: CH544
-    code_flash: 61440
-    data_flash: 3072
+    flash_size: 61440
+    eeprom_size: 1024
     chip_id: 68
-    data_flash_start: 61440
+    eeprom_start_addr: 61440
 
   - name: CH545
-    code_flash: 61440
-    data_flash: 3072
+    flash_size: 61440
+    eeprom_size: 1024
     chip_id: 69
-    data_flash_start: 61440
+    eeprom_start_addr: 61440
 
   - name: CH546
-    code_flash: 32768
-    data_flash: 1024
+    flash_size: 32768
+    eeprom_size: 1024
     chip_id: 70
-    data_flash_start: 61440
+    eeprom_start_addr: 61440
 
   - name: CH547
-    code_flash: 61440
-    data_flash: 1024
+    flash_size: 61440
+    eeprom_size: 1024
     chip_id: 71
-    data_flash_start: 61440
+    eeprom_start_addr: 61440
 
   - name: CH548
-    code_flash: 32768
-    data_flash: 1024
+    flash_size: 32768
+    eeprom_size: 1024
     chip_id: 72
-    data_flash_start: 61440
+    eeprom_start_addr: 61440
 
   - name: CH549
-    code_flash: 61440
-    data_flash: 1024
+    flash_size: 61440
+    eeprom_size: 1024
     chip_id: 73
-    data_flash_start: 61440
+    eeprom_start_addr: 61440
