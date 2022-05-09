@@ -82,7 +82,7 @@ impl<T: Transport> Flashing<T> {
         );
         // FIXME: actual version format?
         log::info!(
-            "BTVER(bootloader ver): {}{}.{}{}",
+            "BTVER(bootloader ver): {:x}{:x}.{:x}{:x}",
             self.bootloader_version[0],
             self.bootloader_version[1],
             self.bootloader_version[2],
