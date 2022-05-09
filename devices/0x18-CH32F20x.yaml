@@ -1,0 +1,31 @@
+---
+name: CH32F20x (High density, Connectivity, Interconnectivity) Series
+mcu_type: 8
+device_type: 0x18
+support_net: false
+support_usb: true
+support_serial: true
+description: High density general-purpose(F203), Connectivity(F205), Interconnectivity(F207), Wireless(F208)
+variants:
+  - name: CH32F205RBT6
+    chip_id: 0x50
+    code_flash: 128KiB
+  - name: CH32F207VCT6
+    chip_id: 0x70
+    code_flash: 256KiB
+  - name: CH32F208WBU6
+    chip_id: 0x80
+    code_flash: 128KiB
+  - name: CH32F208RBT6
+    chip_id: 0x81
+    code_flash: 128KiB
+  - name: CH32F203VCT6
+    chip_id: 0x30
+    code_flash: 256KiB
+  - name: CH32F203RCT6
+    chip_id: 0x31
+    code_flash: 256KiB
+  - name: CH32F203CBT6
+    chip_id: 0x33
+    code_flash: 128KiB
+

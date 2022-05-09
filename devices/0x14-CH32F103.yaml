@@ -1,0 +1,15 @@
+---
+name: CH32F103 Series
+mcu_type: 4
+device_type: 0x14
+support_net: false
+support_usb: true
+support_serial: true
+variants:
+  - name: CH32F103C6T6
+    chip_id: 0x32
+    code_flash: 32KiB
+  - name: CH32F103(C8T6|C8U6|R8T6)
+    chip_id: 0x33
+    alt_chip_id: ALL
+    code_flash: 64KiB

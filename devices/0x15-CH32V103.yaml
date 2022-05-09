@@ -1,0 +1,15 @@
+---
+name: CH32V103 (RISC-V3A) Series
+mcu_type: 4
+device_type: 0x14
+support_net: false
+support_usb: true
+support_serial: true
+variants:
+  - name: CH32V103C6T6
+    chip_id: 0x32
+    code_flash: 32KiB
+  - name: CH32V103(C8U6|C8T6|R8T6)
+    chip_id: 0x33
+    alt_chip_id: ALL
+    code_flash: 64KiB

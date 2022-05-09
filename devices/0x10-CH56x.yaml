@@ -1,0 +1,62 @@
+---
+name: CH56x (RISC-V3A) Series
+mcu_type: 0
+device_type: 0x10
+support_serial: true
+description: CH561, CH563, CH565?, CH566?, CH567, CH568, CH569
+variants:
+  # use 0x46 to probe
+  - name: CH561
+    chip_id: 0x61
+    alt_chip_id: [0x46]
+    code_flash: 64KiB
+    data_flash: 28KiB
+    support_usb: false
+    support_net: true
+
+  # use 0x42 to probe
+  - name: CH563
+    chip_id: 0x63
+    # 0x45 for CH563_E?
+    alt_chip_id: [0x42, 0x43, 0x44, 0x45]
+    code_flash: 224KiB
+    data_flash: 28KiB
+    support_usb: true
+    support_net: true
+
+  - name: CH565
+    chip_id: 0x65
+    code_flash: 458752
+    data_flash: 32768
+    support_usb: true
+    support_net: false
+    data_flash_start: 0
+
+  - name: CH566
+    chip_id: 0x66
+    code_flash: 65536
+    data_flash: 32768
+    support_usb: true
+    support_net: false
+    data_flash_start: 0
+
+  - name: CH567
+    chip_id: 0x67
+    code_flash: 192KiB
+    data_flash: 32KiB
+    support_usb: true
+    support_net: false
+
+  - name: CH568
+    chip_id: 0x68
+    code_flash: 192KiB
+    data_flash: 32KiB
+    support_usb: true
+    support_net: false
+
+  - name: CH569
+    chip_id: 0x69
+    code_flash: 448KiB
+    data_flash: 32KiB
+    support_usb: true
+    support_net: false

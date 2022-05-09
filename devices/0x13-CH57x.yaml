@@ -1,0 +1,38 @@
+---
+name: CH57x (Cortex-M0/RISC-V3A BLE) Series
+mcu_type: 3
+device_type: 0x13
+support_usb: true
+support_serial: true
+support_net: false
+description: ""
+variants:
+  - name: CH571
+    code_flash: 196608
+    data_flash: 32768
+    chip_id: 113
+    data_flash_start: 256000
+
+  - name: CH573
+    code_flash: 458752
+    data_flash: 32768
+    chip_id: 115
+    data_flash_start: 256000
+
+  - name: CH577
+    code_flash: 131072
+    data_flash: 2048
+    chip_id: 119
+    data_flash_start: 131072
+
+  - name: CH578
+    code_flash: 163840
+    data_flash: 2048
+    chip_id: 120
+    data_flash_start: 163840
+
+  - name: CH579
+    code_flash: 256000
+    data_flash: 2048
+    chip_id: 121
+    data_flash_start: 256000
