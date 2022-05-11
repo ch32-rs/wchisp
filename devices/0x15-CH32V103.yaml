@@ -1,7 +1,7 @@
 ---
 name: CH32V103 Series
-mcu_type: 4
-device_type: 0x14
+mcu_type: 5
+device_type: 0x15
 support_net: false
 support_usb: true
 support_serial: true
