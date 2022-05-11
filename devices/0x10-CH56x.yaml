@@ -1,9 +1,9 @@
 ---
-name: CH56x (RISC-V3A) Series
+name: CH56x Series
 mcu_type: 0
 device_type: 0x10
 support_serial: true
-description: CH561, CH563, CH565?, CH566?, CH567, CH568, CH569
+description: CH56x (RISC-V3A) Series
 variants:
   # use 0x46 to probe
   - name: CH561
