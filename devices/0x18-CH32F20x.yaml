@@ -1,10 +1,11 @@
 ---
-name: CH32F20x Series
+name: CH32F20x D8/D8C/D8W Series
 mcu_type: 8
 device_type: 0x18
 support_net: false
 support_usb: true
 support_serial: true
+# Specific D8, D8C, D8W
 description: CH32F20x High density general-purpose(F203), Connectivity(F205), Interconnectivity(F207), Wireless(F208)
 variants:
   - name: CH32F205RBT6
