@@ -7,6 +7,7 @@ use scroll::{Pread, LE};
 
 use crate::{
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR, SECTOR_SIZE},
+    device::ChipDB,
     transport::UsbTransport,
     Chip, Command, Transport,
 };
@@ -28,7 +29,8 @@ impl Flashing<UsbTransport> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
         anyhow::ensure!(resp.is_ok(), "idenfity chip failed");
-        let chip = Chip::guess(resp.payload()[0], resp.payload()[1])?;
+
+        let chip = ChipDB::find_chip(resp.payload()[0], resp.payload()[1])?;
         log::debug!("found chip: {}", chip);
 
         let read_conf = Command::read_config(CFG_MASK_ALL);
@@ -69,8 +71,8 @@ impl<T: Transport> Flashing<T> {
         log::info!(
             "Chip: {} (Code Flash: {}KiB, Data EEPROM: {}KiB)",
             self.chip,
-            self.chip.max_code_flash_size / 1024,
-            self.chip.max_data_flash_size / 1024
+            self.chip.flash_size / 1024,
+            self.chip.eeprom_size / 1024
         );
         log::info!(
             "Chip UID: {}",
@@ -89,8 +91,11 @@ impl<T: Transport> Flashing<T> {
             self.bootloader_version[3]
         );
 
-        log::info!("Code Flash protected: {}", self.code_flash_protected);
-        self.dump_config()?;
+        if self.chip.support_code_flash_protect() {
+            log::info!("Code Flash protected: {}", self.code_flash_protected);
+            self.dump_config()?;
+        }
+
         Ok(())
     }
 
@@ -217,8 +222,8 @@ impl<T: Transport> Flashing<T> {
     }
 
     pub fn erase_data(&mut self, _sectors: u16) -> Result<()> {
-        if self.chip.max_data_flash_size == 0 {
-            anyhow::bail!("chip doesn't support data flash");
+        if self.chip.eeprom_size == 0 {
+            anyhow::bail!("chip doesn't support data EEPROM");
         }
         unimplemented!("TODO")
     }

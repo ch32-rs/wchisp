@@ -1,10 +1,11 @@
 ---
-name: CH32V103 (RISC-V3A) Series
+name: CH32V103 Series
 mcu_type: 4
 device_type: 0x14
 support_net: false
 support_usb: true
 support_serial: true
+description: CH32V103 (RISC-V3A) Series
 variants:
   - name: CH32V103C6T6
     chip_id: 0x32

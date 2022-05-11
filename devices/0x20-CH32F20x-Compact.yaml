@@ -1,12 +1,12 @@
 ---
-name: CH32F20x (Low-and-medium-density) Series
+name: CH32F20x Series
 # NOTE: mcu_type is hex-encoded, not "10" in base-10
 mcu_type: 0x10
 device_type: 0x20
 support_net: false
 support_usb: true
 support_serial: true
-description: Low-and-medium-density general-purpose Cortex-M3
+description: CH32F20x Low-and-medium-density general-purpose Cortex-M3
 variants:
   - name: CH32F203C8U6
     chip_id: 0x30

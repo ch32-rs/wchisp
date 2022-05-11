@@ -5,6 +5,7 @@ device_type: 0x14
 support_net: false
 support_usb: true
 support_serial: true
+description: CH32F103 (Cortex-M3) Series
 variants:
   - name: CH32F103C6T6
     chip_id: 0x32

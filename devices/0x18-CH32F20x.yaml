@@ -1,11 +1,11 @@
 ---
-name: CH32F20x (High density, Connectivity, Interconnectivity) Series
+name: CH32F20x Series
 mcu_type: 8
 device_type: 0x18
 support_net: false
 support_usb: true
 support_serial: true
-description: High density general-purpose(F203), Connectivity(F205), Interconnectivity(F207), Wireless(F208)
+description: CH32F20x High density general-purpose(F203), Connectivity(F205), Interconnectivity(F207), Wireless(F208)
 variants:
   - name: CH32F205RBT6
     chip_id: 0x50

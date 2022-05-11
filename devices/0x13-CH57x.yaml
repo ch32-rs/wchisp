@@ -1,11 +1,11 @@
 ---
-name: CH57x (Cortex-M0/RISC-V3A BLE) Series
+name: CH57x Series
 mcu_type: 3
 device_type: 0x13
 support_usb: true
 support_serial: true
 support_net: false
-description: ""
+description: CH57x (Cortex-M0/RISC-V3A BLE) Series
 variants:
   - name: CH571
     chip_id: 0x71

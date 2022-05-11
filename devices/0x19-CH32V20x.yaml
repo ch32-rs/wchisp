@@ -1,11 +1,12 @@
 ---
-name: CH32V20x (RISC-V4B/V4C) Series
+name: CH32V20x Series
 mcu_type: 9
 device_type: 0x19
 support_net: false
 support_usb: true
 support_serial: true
-description: chip_id 0x8X for V4B, chip_id 0x3X for V4C
+description: CH32V20x (RISC-V4B/V4C) Series
+# chip_id 0x8X for V4B, chip_id 0x3X for V4C
 variants:
   - name: CH32V208WBU6
     chip_id: 0x80

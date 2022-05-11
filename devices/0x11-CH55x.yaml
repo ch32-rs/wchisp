@@ -1,17 +1,17 @@
 ---
-name: CH55x (E8086) Series
+name: CH55x Series
 mcu_type: 1
 device_type: 0x11
 support_usb: true
 support_serial: true
 support_net: false
-description: 1, 2, 4, 5, 7, 8, 9
+description: CH55x (E8086) Series
 variants:
   - name: CH551
     chip_id: 0x51
     flash_size: 10K
     eeprom_size: 128
-    eeprom_start_addr: 10K
+    eeprom_start_addr: 0x2800
 
   - name: CH552
     chip_id: 0x52

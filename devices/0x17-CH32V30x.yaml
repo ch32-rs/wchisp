@@ -1,10 +1,11 @@
 ---
-name: CH32V30x (RISC-V4F) Series
+name: CH32V30x Series
 mcu_type: 7
 device_type: 0x17
 support_net: false
 support_usb: true
 support_serial: true
+description: CH32V30x (RISC-V4F) Series
 variants:
   - name: CH32V305RBT6
     chip_id: 0x50

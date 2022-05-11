@@ -10,13 +10,25 @@ This tool is a work in progress.
 > cargo install wchisp --git https://github.com/ch32-rs/wchisp
 
 > wchisp info
-16:44:52 [INFO] Chip: CH32V307(0x7017) (Code Flash: 480KiB, Data EEPROM: 0KiB)
-16:44:52 [INFO] Chip UID: .......
-16:44:52 [INFO] BTVER(bootloader ver): 020600
-16:44:52 [INFO] Code Flash protected: false
+14:51:24 [INFO] Chip: CH32V307VCT6(0x7017) (Code Flash: 256KiB, Data EEPROM: 0KiB)
+14:51:24 [INFO] Chip UID: 30-78-3e-26-3b-38-a9-d6
+14:51:24 [INFO] BTVER(bootloader ver): 02.60
+14:51:24 [INFO] Code Flash protected: false
 
 > wchisp flash ./path/to/firmware.{bin,hex,elf}
 ```
+
+## ChangeLog
+
+- Unreleased
+  - Refactor chip db, add chip family & variants
+
+- 0.1.1
+  - support ELF parsing
+  - refine chip db
+
+- 0.1.0
+  - Initial release
 
 ## Tested On
 
