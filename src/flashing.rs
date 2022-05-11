@@ -245,8 +245,8 @@ impl<T: Transport> Flashing<T> {
             }
         );
         log::info!("USER:  0x{:02X}{:02X}", regs[2], regs[3]);
-        log::info!("USER0: 0x{:02X}{:02X}", regs[4], regs[5]);
-        log::info!("USER1: 0x{:02X}{:02X}", regs[6], regs[7]);
+        log::info!("DATA0: 0x{:02X}{:02X}", regs[4], regs[5]);
+        log::info!("DATA1: 0x{:02X}{:02X}", regs[6], regs[7]);
         log::info!(
             "WPR:   0x{:02X}{:02X}{:02X}{:02X}",
             regs[8],

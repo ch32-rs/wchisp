@@ -21,6 +21,9 @@ This tool is a work in progress.
 ## ChangeLog
 
 - Unreleased
+  - minior bug fixes for chip db and register name
+
+- 0.1.2
   - Refactor chip db, add chip family & variants
 
 - 0.1.1
