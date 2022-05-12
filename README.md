@@ -18,21 +18,6 @@ This tool is a work in progress.
 > wchisp flash ./path/to/firmware.{bin,hex,elf}
 ```
 
-## ChangeLog
-
-- Unreleased
-  - minior bug fixes for chip db and register name
-
-- 0.1.2
-  - Refactor chip db, add chip family & variants
-
-- 0.1.1
-  - support ELF parsing
-  - refine chip db
-
-- 0.1.0
-  - Initial release
-
 ## Tested On
 
 This tool should work on most WCH MCU chips. But I haven't tested it on any other chips.
@@ -48,3 +33,15 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
 - https://github.com/rgwan/librech551
 - https://github.com/jobitjoseph/CH55XDuino
 - https://github.com/frank-zago/isp55e0
+
+### Contribution
+
+This project is under active development. If you have any suggestions or bug reports, please open an issue.
+
+If it works for your devices, please open a pull request to modify this README page.
+
+It it doesn't, please open an issue. Better provide the following information:
+
+- chip type (with variant surfix)
+- debug print of usb packets
+- correct usb packets to negotiate with the chip (via USBPcap or other tools)
