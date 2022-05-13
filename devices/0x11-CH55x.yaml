@@ -5,7 +5,7 @@ device_type: 0x11
 support_usb: true
 support_serial: true
 support_net: false
-description: CH55x (E8086) Series
+description: CH55x (E8051) Series
 variants:
   - name: CH551
     chip_id: 0x51

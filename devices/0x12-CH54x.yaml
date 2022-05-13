@@ -5,7 +5,7 @@ device_type: 0x12
 support_usb: true
 support_serial: true
 support_net: false
-description: CH54x (E8086) Series, CH540-CH542 is not supported yet
+description: CH54x (E8051) Series, CH540-CH542 is not supported yet
 variants:
   - name: CH543
     chip_id: 67
