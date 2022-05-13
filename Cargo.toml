@@ -11,6 +11,7 @@ description = "A command-line implementation of WCHISPTool, for flashing ch32 MC
 keywords = ["wch", "cli", "ch32", "embedded"]
 readme = "README.md"
 license = "GPL-2.0"
+include = ["**/*.rs", "devices/**/*.yaml", "Cargo.toml", "LICENSE", "README.md"]
 
 [features]
 default = ["vendored-libusb"]
@@ -21,7 +22,7 @@ vendored-libusb = ["rusb/vendored"]
 rand = "0.8"
 log = "0.4.8"
 serde = { version = "1.0.104", features = ["derive"] }
-serde_yaml = "0.8.11"
+serde_yaml = "0.8"
 clap = { version = "3.1", features = ["derive"] }
 anyhow = "1.0"
 rusb = { version = "0.9.1" }

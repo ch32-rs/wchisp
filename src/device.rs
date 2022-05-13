@@ -1,10 +1,12 @@
 //! MCU Chip definition, with chip-specific or chip-family-specific flags
+use std::collections::BTreeMap;
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 /// MCU Family
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Family {
+pub struct ChipFamily {
     pub name: String,
     pub mcu_type: u8,
     pub device_type: u8,
@@ -13,6 +15,8 @@ pub struct Family {
     support_net: Option<bool>,
     pub description: String,
     pub variants: Vec<Chip>,
+    #[serde(default)]
+    pub config_registers: Vec<ConfigRegister>,
 }
 
 /// Represents an MCU chip
@@ -40,6 +44,9 @@ pub struct Chip {
     support_net: Option<bool>,
     support_usb: Option<bool>,
     support_serial: Option<bool>,
+
+    #[serde(default)]
+    pub config_registers: Vec<ConfigRegister>,
 }
 
 impl ::std::fmt::Display for Chip {
@@ -54,39 +61,66 @@ impl ::std::fmt::Display for Chip {
     }
 }
 
+/// A u32 config register, with reset values.
+///
+/// The reset value is NOT the value of the register when the device is reset,
+/// but the value of the register when the device is in the flash-able mode.
+///
+/// Read in LE mode.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigRegister {
+    pub offset: usize,
+    pub name: String,
+    #[serde(default)]
+    description: String,
+    pub reset: Option<u32>,
+    #[serde(default)]
+    pub explaination: BTreeMap<String, String>,
+    #[serde(default)]
+    pub fields: Vec<RegisterField>,
+}
+
+/// A range of bits in a register, with a name and a description
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegisterField {
+    pub bit_range: std::ops::RangeInclusive<u8>,
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    // NOTE: use BTreeMap for strict ordering or digits and `_`
+    #[serde(default)]
+    pub explaination: BTreeMap<String, String>,
+}
+
 pub struct ChipDB {
-    families: Vec<Family>,
+    pub families: Vec<ChipFamily>,
 }
 
 impl ChipDB {
     pub fn load() -> Result<Self> {
-        Ok(ChipDB {
-            families: vec![
-                serde_yaml::from_str(&include_str!("../devices/0x10-CH56x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x11-CH55x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x12-CH54x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x13-CH57x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x14-CH32F103.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x15-CH32V103.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x16-CH58x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x17-CH32V30x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x18-CH32F20x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x19-CH32V20x.yaml"))?,
-                serde_yaml::from_str(&include_str!("../devices/0x20-CH32F20x-Compact.yaml"))?,
-            ],
-        })
+        let families = vec![
+            serde_yaml::from_str(include_str!("../devices/0x10-CH56x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x11-CH55x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x12-CH54x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x13-CH57x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x14-CH32F103.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x15-CH32V103.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x16-CH58x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x17-CH32V30x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x18-CH32F20x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x19-CH32V20x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x19-CH32V20x.yaml"))?,
+        ];
+        Ok(ChipDB { families })
     }
 
-    pub fn find_chip(chip_id: u8, device_type: u8) -> Result<Chip> {
-        let db = ChipDB::load()?;
-
-        let family = db
+    pub fn find_chip(&self, chip_id: u8, device_type: u8) -> Result<Chip> {
+        let family = self
             .families
             .iter()
             .find(|f| f.device_type == device_type)
             .ok_or_else(|| anyhow::format_err!("Device type of 0x{:02x} not found", device_type))?;
 
-        log::debug!("Find chip family: {}", family.name);
         let mut chip = family
             .variants
             .iter()
@@ -114,6 +148,9 @@ impl ChipDB {
         }
         if chip.support_serial.is_none() {
             chip.support_serial = family.support_serial;
+        }
+        if chip.config_registers.is_empty() {
+            chip.config_registers = family.config_registers.clone();
         }
         Ok(chip)
     }
@@ -192,5 +229,15 @@ where
     } else {
         // parse pure digits here
         Ok(s.parse().unwrap())
+    }
+}
+
+pub fn parse_number(s: &str) -> Option<u32> {
+    if s.starts_with("0x") || s.starts_with("0X") {
+        Some(u32::from_str_radix(&s[2..], 16).expect(&format!("error while parsering {:?}", s)))
+    } else if s.starts_with("0b") || s.starts_with("0B") {
+        Some(u32::from_str_radix(&s[2..], 2).expect(&format!("error while parsering {:?}", s)))
+    } else {
+        Some(s.parse().expect("must be a number"))
     }
 }

@@ -7,7 +7,7 @@ use scroll::{Pread, LE};
 
 use crate::{
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR, SECTOR_SIZE},
-    device::ChipDB,
+    device::{parse_number, ChipDB},
     transport::UsbTransport,
     Chip, Command, Transport,
 };
@@ -30,7 +30,9 @@ impl Flashing<UsbTransport> {
         let resp = transport.transfer(identify)?;
         anyhow::ensure!(resp.is_ok(), "idenfity chip failed");
 
-        let chip = ChipDB::find_chip(resp.payload()[0], resp.payload()[1])?;
+        let chip_db = ChipDB::load()?;
+
+        let chip = chip_db.find_chip(resp.payload()[0], resp.payload()[1])?;
         log::debug!("found chip: {}", chip);
 
         let read_conf = Command::read_config(CFG_MASK_ALL);
@@ -68,12 +70,20 @@ impl Flashing<UsbTransport> {
 
 impl<T: Transport> Flashing<T> {
     pub fn dump_info(&mut self) -> Result<()> {
-        log::info!(
-            "Chip: {} (Code Flash: {}KiB, Data EEPROM: {}KiB)",
-            self.chip,
-            self.chip.flash_size / 1024,
-            self.chip.eeprom_size / 1024
-        );
+        if self.chip.eeprom_size > 0 {
+            log::info!(
+                "Chip: {} (Code Flash: {}KiB, Data EEPROM: {}KiB)",
+                self.chip,
+                self.chip.flash_size / 1024,
+                self.chip.eeprom_size / 1024
+            );
+        } else {
+            log::info!(
+                "Chip: {} (Code Flash: {}KiB)",
+                self.chip,
+                self.chip.flash_size / 1024,
+            );
+        }
         log::info!(
             "Chip UID: {}",
             self.chip_uid
@@ -82,7 +92,6 @@ impl<T: Transport> Flashing<T> {
                 .collect::<Vec<_>>()
                 .join("-")
         );
-        // FIXME: actual version format?
         log::info!(
             "BTVER(bootloader ver): {:x}{:x}.{:x}{:x}",
             self.bootloader_version[0],
@@ -233,27 +242,40 @@ impl<T: Transport> Flashing<T> {
         let resp = self.transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
 
-        let regs = &resp.payload()[2..];
-        log::info!(
-            "RDPR:  0x{:02X}{:02X} ({})",
-            regs[0],
-            regs[1],
-            if regs[0] == 0xA5 {
-                "unprotected"
-            } else {
-                "protected"
+        let raw = &resp.payload()[2..];
+
+        for reg_def in &self.chip.config_registers {
+            let n = raw.pread_with::<u32>(reg_def.offset, LE)?;
+            //           println!("=> {:08x}", n);
+            println!("{}: 0x{:08X}", reg_def.name, n);
+
+            for (val, expain) in &reg_def.explaination {
+                if val == "_" || Some(n) == parse_number(val) {
+                    println!("  `- {}", expain);
+                    break;
+                }
             }
-        );
-        log::info!("USER:  0x{:02X}{:02X}", regs[2], regs[3]);
-        log::info!("DATA0: 0x{:02X}{:02X}", regs[4], regs[5]);
-        log::info!("DATA1: 0x{:02X}{:02X}", regs[6], regs[7]);
-        log::info!(
-            "WPR:   0x{:02X}{:02X}{:02X}{:02X}",
-            regs[8],
-            regs[9],
-            regs[10],
-            regs[11]
-        );
+
+            for field_def in &reg_def.fields {
+                let bit_width =
+                    (field_def.bit_range.start() - field_def.bit_range.end()) as u32 + 1;
+                let b = (n >> field_def.bit_range.end()) & (2_u32.pow(bit_width) - 1);
+                println!(
+                    "  [{}:{}] {} 0b{:b} (0x{:X})",
+                    field_def.bit_range.start(),
+                    field_def.bit_range.end(),
+                    field_def.name,
+                    b,
+                    b
+                );
+                for (val, expain) in &field_def.explaination {
+                    if val == "_" || Some(b) == parse_number(val) {
+                        println!("    `- {}", expain);
+                        break;
+                    }
+                }
+            }
+        }
 
         Ok(())
     }
