@@ -14,6 +14,22 @@ This tool is a work in progress.
 14:51:24 [INFO] Chip UID: 30-78-3e-26-3b-38-a9-d6
 14:51:24 [INFO] BTVER(bootloader ver): 02.60
 14:51:24 [INFO] Code Flash protected: false
+RDPR_USER: 0x9F605AA5
+  [7:0] RDPR 0b10100101 (0xA5)
+    `- Unprotected
+  [16:16] IWDG_SW 0b0 (0x0)
+    `- IWDG function is enabled by the software (decided along with the LSI clock)
+  [17:17] STOP_RST 0b0 (0x0)
+    `- Enable
+  [18:18] STANDBY_RST 0b0 (0x0)
+    `- Enable
+  [23:21] SRAM_CODE_MODE 0b11 (0x3)
+    `- CODE-228KB + RAM-32KB
+DATA: 0x00FF00FF
+  [7:0] DATA0 0b11111111 (0xFF)
+  [23:16] DATA0 0b11111111 (0xFF)
+WRP: 0xFFFFFFFF
+  `- Unprotected
 
 > wchisp flash ./path/to/firmware.{bin,hex,elf}
 ```
