@@ -23,8 +23,8 @@ config_registers:
         name: IWDG_SW
         description: Independent watchdog (IWDG) hardware enable
         explaination:
-          1: IWDG function is enabled by the software, and disabled by hardware
-          0: IWDG function is enabled by the software (decided along with the LSI clock)
+          1: IWDG enabled by the software, and disabled by hardware
+          0: IWDG enabled by the software (decided along with the LSI clock)
       - bit_range: [17, 17]
         name: STOP_RST
         description: System reset control under the stop mode

@@ -18,7 +18,7 @@ RDPR_USER: 0x9F605AA5
   [7:0] RDPR 0b10100101 (0xA5)
     `- Unprotected
   [16:16] IWDG_SW 0b0 (0x0)
-    `- IWDG function is enabled by the software (decided along with the LSI clock)
+    `- IWDG enabled by the software
   [17:17] STOP_RST 0b0 (0x0)
     `- Enable
   [18:18] STANDBY_RST 0b0 (0x0)
