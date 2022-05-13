@@ -11,16 +11,16 @@ variants:
     chip_id: 0x81
     flash_size: 196608
     eeprom_size: 32768
-    eeprom_start_addr: 0
+    eeprom_start_addr: 196608
 
   - name: CH582
     chip_id: 0x82
     flash_size: 458752
     eeprom_size: 32768
-    eeprom_start_addr: 0
+    eeprom_start_addr: 458752
 
   - name: CH583
     chip_id: 0x83
     flash_size: 458752
     eeprom_size: 557056
-    eeprom_start_addr: 0
+    eeprom_start_addr: 458752
