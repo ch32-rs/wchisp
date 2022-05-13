@@ -102,8 +102,8 @@ impl<T: Transport> Flashing<T> {
 
         if self.chip.support_code_flash_protect() {
             log::info!("Code Flash protected: {}", self.code_flash_protected);
-            self.dump_config()?;
         }
+        self.dump_config()?;
 
         Ok(())
     }

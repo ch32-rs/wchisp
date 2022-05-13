@@ -10,7 +10,7 @@ This tool is a work in progress.
 > cargo install wchisp --git https://github.com/ch32-rs/wchisp
 
 > wchisp info
-14:51:24 [INFO] Chip: CH32V307VCT6(0x7017) (Code Flash: 256KiB, Data EEPROM: 0KiB)
+14:51:24 [INFO] Chip: CH32V307VCT6[0x7017] (Code Flash: 256KiB)
 14:51:24 [INFO] Chip UID: 30-78-3e-26-3b-38-a9-d6
 14:51:24 [INFO] BTVER(bootloader ver): 02.60
 14:51:24 [INFO] Code Flash protected: false

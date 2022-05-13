@@ -53,7 +53,7 @@ impl ::std::fmt::Display for Chip {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         write!(
             f,
-            "{}(0x{:02x}{:02x})",
+            "{}[0x{:02x}{:02x}]",
             self.name,
             self.chip_id,
             self.device_type(),
