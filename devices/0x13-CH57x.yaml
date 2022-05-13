@@ -5,6 +5,8 @@ device_type: 0x13
 support_usb: true
 support_serial: true
 support_net: false
+# CH571/CH573: RISC-V3A
+# Others: Cortext-M0
 description: CH57x (Cortex-M0/RISC-V3A BLE) Series
 variants:
   - name: CH571
