@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Basic config register parsing
+- Config register reset support (buggy for old chips)
 
 ### Changed
 - Refine chip family naming
