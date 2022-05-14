@@ -6,6 +6,57 @@ support_net: false
 support_usb: true
 support_serial: true
 description: CH32F103 (Cortex-M3) Series
+config_registers:
+  - offset: 0x00
+    name: RDPR_USER
+    type: u32
+    reset: 0x00FF5AA5
+    fields:
+      # byte 0
+      - bit_range: [7, 0]
+        name: RDPR
+        description: Read Protection. 0xA5 for unprotected
+        explaination:
+          0xa5: Unprotected
+          _: Protected
+      # byte 2
+      - bit_range: [16, 16]
+        name: IWDG_SW
+        description: Independent watchdog (IWDG) hardware enable
+        explaination:
+          1: IWDG enabled by the software, and disabled by hardware
+          0: IWDG enabled by the software (decided along with the LSI clock)
+      - bit_range: [17, 17]
+        name: STOP_RST
+        description: System reset control under the stop mode
+        explaination:
+          1: Disable
+          0: Enable
+      - bit_range: [18, 18]
+        name: STANDBY_RST
+        description: System reset control under the standby mode, STANDY_RST
+        explaination:
+          1: Disable, entering standby-mode without RST
+          0: Enable
+  - offset: 0x04
+    name: DATA
+    description: Customizable 2 byte data, DATA0, nDATA0, DATA1, nDATA1
+    reset: 0xFF00FF00
+    type: u32
+    fields:
+      - bit_range: [7, 0]
+        name: DATA0
+      - bit_range: [23, 16]
+        name: DATA0
+  - offset: 0x08
+    name: WRP
+    # Each bit represents 4K bytes (16 pages) to store the write protection status
+    description: Flash memory write protection status
+    type: u32
+    reset: 0xFFFFFFFF
+    explaination:
+      0xFFFFFFFF: Unprotected
+      _: Some 4K sections are protected
 variants:
   - name: CH32F103C6T6
     chip_id: 0x32
