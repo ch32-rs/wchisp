@@ -6,6 +6,44 @@ support_usb: true
 support_serial: true
 support_net: false
 description: CH54x (E8051) Series, CH540-CH542 is not supported yet
+config_registers: &config_registers_ch548_ch549
+  - offset: 0x00
+    name: REG0
+    reset: 0x00000000
+  - offset: 0x04
+    name: REG1
+    reset: 0x00000000
+    fields:
+      - bit_range: [7, 0]
+        name: REG1_0
+  # section 6.2
+  - offset: 0x08
+    name: REG2
+    reset: 0x0000D200
+    fields:
+      - bit_range: [2, 0]
+        name: LV_RST_VOL
+        explaination:
+          0b000: 2.4V
+          0b001: 2.4V
+          0b010: 2.7V
+          0b011: 3.0V
+          0b100: 3.6V
+          0b101: 4.0V
+          0b110: 4.3V
+          0b111: 4.6V
+      - bit_range: [8, 8]
+        name: MUST_0
+      - bit_range: [9, 9]
+        name: MUST_1
+      - bit_range: [12, 12]
+        name: En_P5.7_RESET
+      - bit_range: [13, 13]
+        name: En_Long_Reset
+      - bit_range: [14, 14]
+        name: No_Boot_Load
+      - bit_range: [15, 15]
+        name: Code_Protect
 variants:
   - name: CH543
     chip_id: 67
@@ -43,9 +81,11 @@ variants:
     eeprom_size: 1024
     chip_id: 72
     eeprom_start_addr: 61440
+    config_registers: *config_registers_ch548_ch549
 
   - name: CH549
     flash_size: 61440
     eeprom_size: 1024
     chip_id: 73
     eeprom_start_addr: 61440
+    config_registers: *config_registers_ch548_ch549
