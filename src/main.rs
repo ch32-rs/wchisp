@@ -64,7 +64,8 @@ fn main() -> Result<()> {
             flashing.reset()?;
         }
         Cli::Erase {} => {
-            unimplemented!()
+            let sectors = flashing.chip.flash_size / 1024;
+            flashing.erase_code(sectors)?;
         }
         Cli::Unprotect {} => {
             // force unprotect, ignore check

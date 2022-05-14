@@ -14,7 +14,7 @@ use crate::{
 
 pub struct Flashing<T: Transport> {
     transport: T,
-    chip: Chip,
+    pub chip: Chip,
     /// Chip unique identifier
     chip_uid: Vec<u8>,
     // BTVER
