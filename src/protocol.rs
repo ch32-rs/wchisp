@@ -226,7 +226,7 @@ impl Response {
     }
 
     pub(crate) fn from_raw(raw: &[u8]) -> Result<Self> {
-        if raw[1] == 0x00 {
+        if raw[1] == 0x00 || raw[1] == 0x82 {
             let len = raw.pread_with::<u16>(2, scroll::LE)? as usize;
             let remain = &raw[4..];
             if remain.len() == len {
