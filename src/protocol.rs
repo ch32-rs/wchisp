@@ -116,6 +116,11 @@ impl Command {
         }
     }
 
+    // 0x3a per packet
+    pub fn data_read(address: u32, len: u16) -> Self {
+        Command::DataRead { address, len }
+    }
+
     // TODO(visiblity)
     pub fn into_raw(self) -> Result<Vec<u8>> {
         match self {
@@ -186,7 +191,15 @@ impl Command {
                 buf[5..].copy_from_slice(&data);
                 Ok(buf)
             }
+            Command::DataRead { address, len } => {
+                let mut buf = [0u8; 9];
+                buf[0] = commands::DATA_READ;
+                buf[1] = 6; // fixed len
 
+                buf.pwrite_with(address, 3, scroll::LE)?;
+                buf.pwrite_with(len, 7, scroll::LE)?;
+                Ok(buf.to_vec())
+            }
             _ => unimplemented!(),
         }
     }

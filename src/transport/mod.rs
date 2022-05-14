@@ -15,12 +15,12 @@ pub trait Transport {
 
     fn transfer(&mut self, cmd: Command) -> Result<Response> {
         let req = &cmd.into_raw()?;
-        log::debug!("=> {}", hex::encode(&req));
+        log::debug!("=> {}   {}", hex::encode(&req[..3]), hex::encode(&req[3..]));
         self.send_raw(&req)?;
 
         let resp = self.recv_raw()?;
         anyhow::ensure!(req[0] == resp[0], "response command type mismatch");
-        log::debug!("<= {}", hex::encode(&resp));
+        log::debug!("<= {} {}", hex::encode(&resp[..4]), hex::encode(&resp[4..]));
         Response::from_raw(&resp)
     }
 }

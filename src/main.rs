@@ -5,6 +5,13 @@ use clap::StructOpt;
 
 use wchisp::Flashing;
 
+/// Common options and logic when interfacing with a [Probe].
+#[derive(clap::Parser, Debug)]
+pub struct ProbeOptions {
+    #[structopt(long)]
+    pub chip: Option<String>,
+}
+
 #[derive(clap::Parser)]
 #[clap(
     name = "WCHISP Tool CLI",
@@ -13,7 +20,10 @@ use wchisp::Flashing;
 )]
 enum Cli {
     /// Get info about current connected chip
-    Info {},
+    Info {
+        #[clap(flatten)]
+        common: ProbeOptions,
+    },
     /// Reset the target connected
     Reset {},
     /// Remove code flash protect(RDPR and WPR) and reset
@@ -28,9 +38,9 @@ enum Cli {
     /// Config CFG register
     Config {},
     /// Verify flash content
-    Verify {
-        path: String,
-    },
+    Verify { path: String },
+    /// Read EEPROM
+    Eeprom {},
 }
 
 fn main() -> Result<()> {
@@ -44,7 +54,10 @@ fn main() -> Result<()> {
     let matches = Cli::parse();
     let mut flashing = Flashing::new_from_usb()?;
     match matches {
-        Cli::Info {} => {
+        Cli::Info { common } => {
+            if let Some(expected_chip_name) = common.chip {
+                flashing.check_chip_name(&expected_chip_name)?;
+            }
             flashing.dump_info()?;
         }
         Cli::Reset {} => {
@@ -57,6 +70,7 @@ fn main() -> Result<()> {
             // force unprotect, ignore check
             flashing.unprotect(true)?;
         }
+        // WRITE_CONFIG => READ_CONFIG => ISP_KEY => ERASE => PROGRAM => VERIFY => RESET
         Cli::Flash { path } => {
             flashing.dump_info()?;
             let binary = wchisp::format::read_firmware_from_file(path)?;
@@ -72,6 +86,15 @@ fn main() -> Result<()> {
             log::info!("Firmware size: {}", binary.len());
             flashing.verify(&binary)?;
             log::info!("Verified!");
+        }
+        Cli::Eeprom {} => {
+            // FIXME: cannot read?
+            sleep(Duration::from_secs(1));
+            let eeprom = flashing.dump_eeprom()?;
+            log::info!("EEPROM size: {}", eeprom.len());
+        }
+        Cli::Config {  } => {
+            flashing.reset_config()?;
         }
         _ => unimplemented!(),
     }

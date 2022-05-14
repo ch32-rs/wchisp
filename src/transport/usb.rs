@@ -59,7 +59,6 @@ impl UsbTransport {
 
         device_handle.set_active_configuration(1)?;
         let _config = device.active_config_descriptor()?;
-
         let _descriptor = device.device_descriptor()?;
 
         device_handle.claim_interface(0)?;

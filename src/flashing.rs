@@ -3,7 +3,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use anyhow::Result;
-use scroll::{Pread, LE};
+use scroll::{Pread, Pwrite, LE};
 
 use crate::{
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR, SECTOR_SIZE},
@@ -39,7 +39,7 @@ impl Flashing<UsbTransport> {
         let resp = transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
 
-        log::debug!("read_config: {}", hex::encode(&resp.payload()));
+        log::debug!("read_config: {}", hex::encode(&resp.payload()[2..]));
         let code_flash_protected = chip.support_code_flash_protect() && resp.payload()[2] != 0xa5;
         let mut btver = [0u8; 4];
         btver.copy_from_slice(&resp.payload()[14..18]);
@@ -69,6 +69,14 @@ impl Flashing<UsbTransport> {
 }
 
 impl<T: Transport> Flashing<T> {
+
+    pub fn check_chip_name(&self, name: &str) -> Result<()> {
+        if !self.chip.name.starts_with(name)  {
+            anyhow::bail!("chip name mismatch: {}", self.chip.name);
+        }
+        Ok(())
+    }
+
     pub fn dump_info(&mut self) -> Result<()> {
         if self.chip.eeprom_size > 0 {
             log::info!(
@@ -194,6 +202,52 @@ impl<T: Transport> Flashing<T> {
         Ok(())
     }
 
+    pub fn reset_config(&mut self) -> Result<()> {
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        let mut raw = resp.payload()[2..].to_vec();
+
+        log::info!("Current config registers: {}", hex::encode(&raw));
+
+        for reg_desc in &self.chip.config_registers {
+            if let Some(reset) = reg_desc.reset {
+                raw.pwrite_with(reset, reg_desc.offset, scroll::LE)?;
+            }
+        }
+
+        log::info!("Reset config registers:   {}", hex::encode(&raw));
+        let write_conf = Command::write_config(CFG_MASK_RDPR_USER_DATA_WPR, raw);
+        let resp = self.transport.transfer(write_conf)?;
+        anyhow::ensure!(resp.is_ok(), "write_config failed");
+
+        // read back
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        Ok(())
+    }
+
+    pub fn dump_eeprom(&mut self) -> Result<Vec<u8>> {
+        const CHUNK: usize = 0x3a;
+        if self.chip.eeprom_size == 0 {
+            anyhow::bail!("Chip does not support EEPROM");
+        }
+        let mut ret: Vec<u8> = Vec::with_capacity(self.chip.eeprom_size as _);
+        let mut address = 0x0;
+        while address < self.chip.eeprom_size as u32 {
+            let cmd = Command::data_read(address, CHUNK as u16);
+            let resp = self.transport.transfer(cmd)?;
+            anyhow::ensure!(resp.is_ok(), "data_read failed");
+            address += CHUNK as u32;
+            assert!(resp.payload()[2..].len() == CHUNK);
+            ret.extend_from_slice(&resp.payload()[2..]);
+        }
+        Ok(ret)
+    }
+
     fn flash_chunk(&mut self, address: u32, raw: &[u8], key: [u8; 8]) -> Result<()> {
         let xored = raw.iter().enumerate().map(|(i, x)| x ^ key[i % 8]);
         let padding = rand::random();
@@ -246,7 +300,6 @@ impl<T: Transport> Flashing<T> {
 
         for reg_def in &self.chip.config_registers {
             let n = raw.pread_with::<u32>(reg_def.offset, LE)?;
-            //           println!("=> {:08x}", n);
             println!("{}: 0x{:08X}", reg_def.name, n);
 
             for (val, expain) in &reg_def.explaination {
