@@ -39,6 +39,8 @@ WRP: 0xFFFFFFFF
 This tool should work on most WCH MCU chips. But I haven't tested it on any other chips.
 
 - [x] CH32V307(VCT6)
+- [x] CH32V103
+- [x] CH32F103
 - ... (feel free to open an issue whether it works on your chip or not)
 
 ## Related Works (Many Thanks!)
