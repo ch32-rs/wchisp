@@ -74,9 +74,12 @@ fn main() -> Result<()> {
         // WRITE_CONFIG => READ_CONFIG => ISP_KEY => ERASE => PROGRAM => VERIFY => RESET
         Cli::Flash { path } => {
             flashing.dump_info()?;
-            let binary = wchisp::format::read_firmware_from_file(path)?;
+            let mut binary = wchisp::format::read_firmware_from_file(path)?;
+
+            extend_firmware_to_sector_boundary(&mut binary);
             log::info!("Firmware size: {}", binary.len());
             flashing.flash(&binary)?;
+
             sleep(Duration::from_secs(1));
             flashing.verify(&binary)?;
             sleep(Duration::from_secs(1));
@@ -101,4 +104,12 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+
+fn extend_firmware_to_sector_boundary(buf: &mut Vec<u8>) {
+    if buf.len() % 1024 != 0 {
+        let remain = 1024 - (buf.len() % 1024);
+        buf.extend_from_slice(&vec![0; remain]);
+    }
 }

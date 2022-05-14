@@ -69,9 +69,8 @@ impl Flashing<UsbTransport> {
 }
 
 impl<T: Transport> Flashing<T> {
-
     pub fn check_chip_name(&self, name: &str) -> Result<()> {
-        if !self.chip.name.starts_with(name)  {
+        if !self.chip.name.starts_with(name) {
             anyhow::bail!("chip name mismatch: {}", self.chip.name);
         }
         Ok(())
@@ -184,7 +183,6 @@ impl<T: Transport> Flashing<T> {
 
         let key = self.xor_key();
         let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
-
         // NOTE: use all-zero key seed for now.
         let isp_key = Command::isp_key(vec![0; 0x1e]);
         let resp = self.transport.transfer(isp_key)?;
