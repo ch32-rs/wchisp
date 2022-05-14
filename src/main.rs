@@ -61,7 +61,7 @@ fn main() -> Result<()> {
             flashing.dump_info()?;
         }
         Cli::Reset {} => {
-            flashing.reset()?;
+            let _ = flashing.reset();
         }
         Cli::Erase {} => {
             let sectors = flashing.chip.flash_size / 1024;
@@ -83,7 +83,9 @@ fn main() -> Result<()> {
             sleep(Duration::from_secs(1));
             flashing.verify(&binary)?;
             sleep(Duration::from_secs(1));
-            flashing.reset()?
+
+            log::info!("Flash and Verify OK, now reset device");
+            let _ = flashing.reset();
         }
         Cli::Verify { path } => {
             let binary = wchisp::format::read_firmware_from_file(path)?;
