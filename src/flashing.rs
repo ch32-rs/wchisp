@@ -151,7 +151,7 @@ impl<T: Transport> Flashing<T> {
 
     // unprotect -> erase -> flash -> verify -> reset
     pub fn flash(&mut self, raw: &[u8]) -> Result<()> {
-        let sectors = raw.len() / SECTOR_SIZE;
+        let sectors = raw.len() / SECTOR_SIZE + 1;
         self.erase_code(sectors as u32)?;
 
         sleep(Duration::from_secs(1));
@@ -173,6 +173,7 @@ impl<T: Transport> Flashing<T> {
         }
         // NOTE: require a write action of empty data for success flashing
         self.flash_chunk(address, &[], key)?;
+
         log::info!("Code flash {} bytes written", address);
 
         Ok(())
@@ -193,11 +194,9 @@ impl<T: Transport> Flashing<T> {
         const CHUNK: usize = 56;
         let mut address = 0x0;
         for ch in raw.chunks(CHUNK) {
-            self.flash_chunk(address, ch, key)?;
+            self.verify_chunk(address, ch, key)?;
             address += ch.len() as u32;
         }
-        // NOTE: require a write action of empty data for success flashing
-        self.verify_chunk(address, &[], key)?;
 
         Ok(())
     }
