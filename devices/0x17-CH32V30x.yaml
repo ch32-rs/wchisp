@@ -18,26 +18,29 @@ config_registers:
         explaination:
           0xa5: Unprotected
           _: Protected
-      # byte 2
+      # byte 2, [0:0] + 16
       - bit_range: [16, 16]
         name: IWDG_SW
         description: Independent watchdog (IWDG) hardware enable
         explaination:
           1: IWDG enabled by the software, and disabled by hardware
           0: IWDG enabled by the software (decided along with the LSI clock)
+      # [1:1] + 16
       - bit_range: [17, 17]
         name: STOP_RST
         description: System reset control under the stop mode
         explaination:
           1: Disable
           0: Enable
+      # [2:2] + 16
       - bit_range: [18, 18]
         name: STANDBY_RST
         description: System reset control under the standby mode, STANDY_RST
         explaination:
           1: Disable, entering standby-mode without RST
           0: Enable
-      - bit_range: [23, 21]
+      # [7:6] + 16
+      - bit_range: [23, 22]
         name: SRAM_CODE_MODE
         description: SRAM Code Mode
         explaination:
