@@ -54,7 +54,7 @@ config_registers:
       - bit_range: [7, 0]
         name: DATA0
       - bit_range: [23, 16]
-        name: DATA0
+        name: DATA1
   - offset: 0x08
     name: WRP
     # Each bit represents 4K bytes (16 pages) to store the write protection status
