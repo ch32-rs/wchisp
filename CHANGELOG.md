@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Config register definition for CH32F10x
 - Code erase impl
+- Add schema for device description yaml
+
 ### Fixed
 - Wrong verify impl
 - Ignore reset protocol errors
+- Wrong field definitions #2 #3
 
 ## [0.1.3] - 2022-05-14
 ### Added
