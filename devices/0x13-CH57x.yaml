@@ -7,7 +7,7 @@ support_serial: true
 support_net: false
 # CH571/CH573: RISC-V3A
 # Others: Cortext-M0
-description: CH57x (Cortex-M0/RISC-V3A BLE) Series
+description: CH57x (Cortex-M0/RISC-V3A BLE 4.2) Series
 variants:
   - name: CH571
     chip_id: 0x71

@@ -9,7 +9,6 @@ description: CH32F103 (Cortex-M3) Series
 config_registers:
   - offset: 0x00
     name: RDPR_USER
-    type: u32
     reset: 0x00FF5AA5
     fields:
       # byte 0

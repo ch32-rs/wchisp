@@ -5,7 +5,8 @@ device_type: 0x12
 support_usb: true
 support_serial: true
 support_net: false
-description: CH54x (E8051) Series, CH540-CH542 is not supported yet
+# CH540-CH542 is not supported yet
+description: CH54x (E8051) Series
 config_registers: &config_registers_ch548_ch549
   - offset: 0x00
     name: REG0

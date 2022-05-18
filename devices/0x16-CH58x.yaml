@@ -5,7 +5,7 @@ device_type: 0x16
 support_usb: true
 support_serial: true
 support_net: false
-description: CH58x (RISC-V3A BLE) Series
+description: CH58x (RISC-V4A BLE 5.3) Series
 variants:
   - name: CH581
     chip_id: 0x81

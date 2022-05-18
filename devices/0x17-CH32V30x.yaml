@@ -9,7 +9,7 @@ description: CH32V30x (RISC-V4F) Series
 config_registers:
   - offset: 0x00
     name: RDPR_USER
-    type: u32
+    description: RDPR, nRDPR, USER, nUSER
     reset: 0x00FF5AA5
     fields:
       - bit_range: [7, 0]

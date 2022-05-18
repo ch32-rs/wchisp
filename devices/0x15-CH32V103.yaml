@@ -9,7 +9,7 @@ description: CH32V103 (RISC-V3A) Series
 config_registers:
   - offset: 0x00
     name: RDPR_USER
-    type: u32
+    description: RDPR, nRDPR, USER, nUSER
     reset: 0x00FF5AA5
     fields:
       # byte 0
