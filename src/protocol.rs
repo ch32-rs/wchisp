@@ -239,13 +239,14 @@ impl Response {
     }
 
     pub(crate) fn from_raw(raw: &[u8]) -> Result<Self> {
-        if raw[1] == 0x00 || raw[1] == 0x82 {
+        // FIXME: should raw[1] == 0x00 || raw[1] == 0x82?
+        if true {
             let len = raw.pread_with::<u16>(2, scroll::LE)? as usize;
             let remain = &raw[4..];
             if remain.len() == len {
                 Ok(Response::Ok(remain.to_vec()))
             } else {
-                Err(anyhow::anyhow!("Invalid response length"))
+                Err(anyhow::anyhow!("Invalid response"))
             }
         } else {
             Ok(Response::Err(raw[1], raw[2..].to_vec()))
