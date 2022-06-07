@@ -21,7 +21,7 @@ variants:
     eeprom_start_addr: 14K
 
   - name: CH554
-    chip_id: 0x53
+    chip_id: 0x54
     flash_size: 14K
     eeprom_size: 128
     eeprom_start_addr: 14K
