@@ -122,7 +122,7 @@ fn main() -> Result<()> {
             if no_reset {
                 log::warn!("Skipping reset");
             } else {
-                log::info!("Now reset device");
+                log::info!("Now reset device and skip any communication errors");
                 let _ = flashing.reset();
             }
         }
