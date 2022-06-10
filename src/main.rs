@@ -3,7 +3,7 @@ use std::{thread::sleep, time::Duration};
 use anyhow::Result;
 use clap::StructOpt;
 
-use wchisp::Flashing;
+use wchisp::{constants::SECTOR_SIZE, Flashing};
 
 /// Common options and logic when interfacing with a [Probe].
 #[derive(clap::Parser, Debug)]
@@ -34,6 +34,15 @@ enum Cli {
     Flash {
         /// The path to the file to be downloaded to the code flash
         path: String,
+        /// Do not erase the code flash before flashing
+        #[clap(short = 'E', long)]
+        no_erase: bool,
+        /// Do not verify the code flash after flashing
+        #[clap(short = 'V', long)]
+        no_verify: bool,
+        /// Do not reset the target after flashing
+        #[clap(short = 'R', long)]
+        no_reset: bool,
     },
     /// Config CFG register
     Config {},
@@ -53,6 +62,8 @@ fn main() -> Result<()> {
 
     let matches = Cli::parse();
     let mut flashing = Flashing::new_from_usb()?;
+
+    #[allow(unreachable_patterns)]
     match matches {
         Cli::Info { common } => {
             if let Some(expected_chip_name) = common.chip {
@@ -68,24 +79,52 @@ fn main() -> Result<()> {
             flashing.erase_code(sectors)?;
         }
         Cli::Unprotect {} => {
+            log::warn!("Only applies to CH32F/CH32V devices for now");
+            log::warn!("Unprotect is deprected, use `config` to reset to default config");
             // force unprotect, ignore check
             flashing.unprotect(true)?;
         }
         // WRITE_CONFIG => READ_CONFIG => ISP_KEY => ERASE => PROGRAM => VERIFY => RESET
-        Cli::Flash { path } => {
+        Cli::Flash {
+            path,
+            no_erase,
+            no_verify,
+            no_reset,
+        } => {
             flashing.dump_info()?;
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
 
             extend_firmware_to_sector_boundary(&mut binary);
+
+            if no_erase {
+                log::warn!("Skipping erase");
+            } else {
+                let sectors = binary.len() / SECTOR_SIZE + 1;
+                flashing.erase_code(sectors as u32)?;
+
+                sleep(Duration::from_secs(1));
+                log::info!("Erase done");
+            }
+
             log::info!("Firmware size: {}", binary.len());
             flashing.flash(&binary)?;
 
             sleep(Duration::from_secs(1));
-            flashing.verify(&binary)?;
-            sleep(Duration::from_secs(1));
 
-            log::info!("Flash and Verify OK, now reset device");
-            let _ = flashing.reset();
+            if no_verify {
+                log::warn!("Skipping verify");
+            } else {
+                flashing.verify(&binary)?;
+                sleep(Duration::from_secs(1));
+                log::info!("Verify OK");
+            }
+
+            if no_reset {
+                log::warn!("Skipping reset");
+            } else {
+                log::info!("Now reset device");
+                let _ = flashing.reset();
+            }
         }
         Cli::Verify { path } => {
             let binary = wchisp::format::read_firmware_from_file(path)?;
@@ -99,7 +138,7 @@ fn main() -> Result<()> {
             let eeprom = flashing.dump_eeprom()?;
             log::info!("EEPROM size: {}", eeprom.len());
         }
-        Cli::Config {  } => {
+        Cli::Config {} => {
             flashing.reset_config()?;
         }
         _ => unimplemented!(),
@@ -107,7 +146,6 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
 
 fn extend_firmware_to_sector_boundary(buf: &mut Vec<u8>) {
     if buf.len() % 1024 != 0 {

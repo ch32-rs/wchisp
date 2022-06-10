@@ -6,7 +6,7 @@ use anyhow::Result;
 use scroll::{Pread, Pwrite, LE};
 
 use crate::{
-    constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR, SECTOR_SIZE},
+    constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
     device::{parse_number, ChipDB},
     transport::UsbTransport,
     Chip, Command, Transport,
@@ -115,6 +115,7 @@ impl<T: Transport> Flashing<T> {
         Ok(())
     }
 
+    /// Unprotect code flash.
     pub fn unprotect(&mut self, force: bool) -> Result<()> {
         if !force && !self.code_flash_protected {
             return Ok(());
@@ -149,12 +150,8 @@ impl<T: Transport> Flashing<T> {
     }
 
     // unprotect -> erase -> flash -> verify -> reset
+    /// Program the code flash.
     pub fn flash(&mut self, raw: &[u8]) -> Result<()> {
-        let sectors = raw.len() / SECTOR_SIZE + 1;
-        self.erase_code(sectors as u32)?;
-
-        sleep(Duration::from_secs(1));
-
         let key = self.xor_key();
         let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
 
