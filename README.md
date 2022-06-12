@@ -45,12 +45,12 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
 
 ## Related Works (Many Thanks!)
 
-- https://github.com/MarsTechHAN/ch552tool
-- https://github.com/MarsTechHAN/ch552tool/pull/21 by [@Pe3ucTop](https://github.com/Pe3ucTop/ch552tool/tree/global_rework)
-- https://github.com/Blinkinlabs/ch554_sdcc
-- https://github.com/rgwan/librech551
-- https://github.com/jobitjoseph/CH55XDuino
-- https://github.com/frank-zago/isp55e0
+- <https://github.com/MarsTechHAN/ch552tool>
+- <https://github.com/MarsTechHAN/ch552tool/pull/21> by [@Pe3ucTop](https://github.com/Pe3ucTop/ch552tool/tree/global_rework)
+- <https://github.com/Blinkinlabs/ch554_sdcc>
+- <https://github.com/rgwan/librech551>
+- <https://github.com/jobitjoseph/CH55XDuino>
+- <https://github.com/frank-zago/isp55e0>
 
 ### Contribution
 
