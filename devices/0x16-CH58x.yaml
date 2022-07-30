@@ -28,10 +28,11 @@ config_registers:
         explaination:
           1: PB22(Default set)
           0: PB11
-
+      # TODO: parse write protect address
   - offset: 0x08
     name: CONFIG
     description: User non-volatile configuration
+    # Enable 2-wire debug
     reset: 0x4FFF0FD5
     type: u32
     fields:
