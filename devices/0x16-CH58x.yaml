@@ -8,8 +8,8 @@ support_net: false
 description: CH58x (RISC-V4A BLE 5.3) Series
 config_registers:
   - offset: 0x00
-    name: REVERSED
-    description: Reversed 32-bit word
+    name: RESERVED
+    description: Reserved 32-bit word
     reset: 0xFFFFFFFF
     type: u32
   - offset: 0x04
@@ -74,7 +74,6 @@ config_registers:
         explaination:
           0b0100: Valid
           _: Error
-
 
 variants:
   - name: CH581
