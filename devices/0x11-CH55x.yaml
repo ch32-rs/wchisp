@@ -79,20 +79,20 @@ variants:
     chip_id: 0x51
     flash_size: 10K
     eeprom_size: 128
-    eeprom_start_addr: 0x2800
+    eeprom_start_addr: 0xC000
 
   - name: CH552
     chip_id: 0x52
     # FIXME: 16K or 14K
     flash_size: 14K
     eeprom_size: 128
-    eeprom_start_addr: 14K
+    eeprom_start_addr: 0xC000
 
   - name: CH554
     chip_id: 0x54
     flash_size: 14K
     eeprom_size: 128
-    eeprom_start_addr: 14K
+    eeprom_start_addr: 0xC000
 
   - name: CH555
     chip_id: 0x55
@@ -116,7 +116,7 @@ variants:
     chip_id: 0x58
     flash_size: 32768
     eeprom_size: 5120
-    eeprom_start_addr: 61440
+    eeprom_start_addr: 0xE000
 
   - name: CH559
     chip_id: 0x59
