@@ -11,8 +11,14 @@ env:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    name: build (${{ matrix.config.os }})
+    strategy:
+      matrix:
+        config:
+          - os: windows-latest
+          - os: ubuntu-latest
+          - os: macos-latest
+    runs-on: ${{ matrix.config.os }}
 
     steps:
     - uses: actions/checkout@v3
@@ -22,3 +28,7 @@ jobs:
       run: cargo test --verbose
     - name: Run help
       run: cargo run -- --help
+    - uses: actions/upload-artifact@v3
+      with:
+        name: wchisp-${{ matrix.config.os }}
+        path: target/debug/wchisp*
