@@ -1,6 +1,6 @@
 [package]
 name = "wchisp"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 authors = ["Andelf <andelf@gmail.com>"]
 repository = "https://github.com/ch32-rs/wchisp"
