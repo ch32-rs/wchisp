@@ -37,3 +37,4 @@ object = { version = "0.29", default-features = false, features = [
     "read_core",
     "std",
 ] }
+indicatif = "0.17"

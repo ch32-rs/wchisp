@@ -175,6 +175,7 @@ fn main() -> Result<()> {
                 log::info!("Erase done");
             }
 
+            log::info!("Writing to code flash...");
             flashing.flash(&binary)?;
             sleep(Duration::from_millis(500));
 
@@ -210,6 +211,7 @@ fn main() -> Result<()> {
                     flashing.reidenfity()?;
 
                     sleep(Duration::from_millis(500));
+                    log::info!("Reading EEPROM...");
 
                     let eeprom = flashing.dump_eeprom()?;
                     log::info!("EEPROM data size: {}", eeprom.len());

@@ -1,8 +1,6 @@
 //! Chip flashing routine
-use std::thread::sleep;
-use std::time::Duration;
-
 use anyhow::Result;
+use indicatif::ProgressBar;
 use scroll::{Pread, Pwrite, LE};
 
 use crate::{
@@ -202,12 +200,16 @@ impl<T: Transport> Flashing<T> {
 
         const CHUNK: usize = 56;
         let mut address = 0x0;
+
+        let bar = ProgressBar::new(raw.len() as _);
         for ch in raw.chunks(CHUNK) {
             self.flash_chunk(address, ch, key)?;
             address += ch.len() as u32;
+            bar.inc(ch.len() as _);
         }
         // NOTE: require a write action of empty data for success flashing
         self.flash_chunk(address, &[], key)?;
+        bar.finish();
 
         log::info!("Code flash {} bytes written", address);
 
@@ -215,8 +217,6 @@ impl<T: Transport> Flashing<T> {
     }
 
     pub fn verify(&mut self, raw: &[u8]) -> Result<()> {
-        sleep(Duration::from_secs(1));
-
         let key = self.xor_key();
         let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
         // NOTE: use all-zero key seed for now.
@@ -227,10 +227,13 @@ impl<T: Transport> Flashing<T> {
 
         const CHUNK: usize = 56;
         let mut address = 0x0;
+        let bar = ProgressBar::new(raw.len() as _);
         for ch in raw.chunks(CHUNK) {
             self.verify_chunk(address, ch, key)?;
             address += ch.len() as u32;
+            bar.inc(ch.len() as _);
         }
+        bar.finish();
 
         Ok(())
     }
@@ -270,6 +273,8 @@ impl<T: Transport> Flashing<T> {
         if self.chip.eeprom_size == 0 {
             anyhow::bail!("Chip does not support EEPROM");
         }
+        let bar = ProgressBar::new(self.chip.eeprom_size as _);
+
         let mut ret: Vec<u8> = Vec::with_capacity(self.chip.eeprom_size as _);
         let mut address = 0x0;
         while address < self.chip.eeprom_size as u32 {
@@ -278,7 +283,7 @@ impl<T: Transport> Flashing<T> {
             let cmd = Command::data_read(address, chunk_size);
             let resp = self.transport.transfer(cmd)?;
             anyhow::ensure!(resp.is_ok(), "data_read failed");
-            address += CHUNK as u32;
+
             anyhow::ensure!(
                 resp.payload()[2..].len() == chunk_size as usize,
                 "data_read length mismatch"
@@ -287,7 +292,11 @@ impl<T: Transport> Flashing<T> {
                 anyhow::bail!("EEPROM read failed, required chunk size cannot be satisfied");
             }
             ret.extend_from_slice(&resp.payload()[2..]);
+            address += chunk_size as u32;
+
+            bar.inc(chunk_size as _);
             if chunk_size < CHUNK as u16 {
+                bar.finish();
                 break;
             }
         }
