@@ -8,17 +8,21 @@ This tool is a work in progress.
 
 ## TODOs
 - [x] chip detection, identification
+  - `wchisp probe`
+  - `wchisp info`
 - [x] chip config register dump
+  - `wchisp config`
   - works for most chips, but not all
 - [x] flash and verify code
   - [x] ELF parsing
   - [x] hex, bin, ihex support
+  - [x] skip erasing, verifying, resetting
 - [x] EEPROM dump
 - [ ] EEPROM write
 - [ ] write config registers
   - [x] reset config registers to default(unprotected state)
   - [ ] write config with friendly register names? like `wchisp config set SRAM_CODE_MODE=1 ...`
-- [x] select from multiple chips(using index)
+- [x] select from multiple chips(using index) `wchisp -d 0 info`
 - [ ] ISP via UART or Net
 
 ## Usage
