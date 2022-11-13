@@ -41,7 +41,10 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
 - [x] CH32V307(VCT6)
 - [x] CH32V103
 - [x] CH32F103
-- [x] CH582 (CH58xM-EVT)
+- [x] CH582
+  - CH58xM-EVT
+- [x] CH32V203
+  - [CH32V203G6 FlappyBoard](https://github.com/metro94/FlappyBoard)
 - ... (feel free to open an issue whether it works on your chip or not)
 
 ## Related Works (Many Thanks!)
