@@ -9,7 +9,7 @@ use super::Transport;
 const ENDPOINT_OUT: u8 = 0x02;
 const ENDPOINT_IN: u8 = 0x82;
 
-const TIMEOUT_MS: u64 = 2000;
+const TIMEOUT_MS: u64 = 1000;
 
 pub struct UsbTransport {
     device_handle: DeviceHandle<rusb::Context>,
@@ -95,7 +95,7 @@ impl UsbTransport {
 impl Transport for UsbTransport {
     fn send_raw(&mut self, raw: &[u8]) -> Result<()> {
         self.device_handle
-            .write_bulk(ENDPOINT_OUT, raw, Duration::from_micros(TIMEOUT_MS))?;
+            .write_bulk(ENDPOINT_OUT, raw, Duration::from_millis(TIMEOUT_MS))?;
         Ok(())
     }
 
@@ -104,7 +104,7 @@ impl Transport for UsbTransport {
         let nread = self.device_handle.read_bulk(
             ENDPOINT_IN,
             &mut buf,
-            Duration::from_micros(TIMEOUT_MS),
+            Duration::from_millis(TIMEOUT_MS),
         )?;
         Ok(buf[..nread].to_vec())
     }
