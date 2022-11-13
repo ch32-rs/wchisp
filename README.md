@@ -1,5 +1,7 @@
 # wchisp - WCH ISP Tool in Rust
 
+![crates.io](https://img.shields.io/crates/v/wchisp.svg)
+
 Command-line implementation of the WCHISPTool in Rust, by the ch32-rs team.
 
 This tool is a work in progress.
