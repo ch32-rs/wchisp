@@ -3,9 +3,9 @@
 pub mod constants;
 pub mod device;
 pub mod flashing;
+pub mod format;
 pub mod protocol;
 pub mod transport;
-pub mod format;
 
 pub use self::device::Chip;
 pub use self::flashing::Flashing;

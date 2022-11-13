@@ -19,6 +19,18 @@ pub struct ChipFamily {
     pub config_registers: Vec<ConfigRegister>,
 }
 
+impl ChipFamily {
+    fn validate(&self) -> Result<()> {
+        for variant in &self.variants {
+            variant.validate()?;
+        }
+        for register in &self.config_registers {
+            register.validate()?;
+        }
+        Ok(())
+    }
+}
+
 /// Represents an MCU chip
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chip {
@@ -61,6 +73,15 @@ impl ::std::fmt::Display for Chip {
     }
 }
 
+impl Chip {
+    pub fn validate(&self) -> Result<()> {
+        for reg in &self.config_registers {
+            reg.validate()?;
+        }
+        Ok(())
+    }
+}
+
 /// A u32 config register, with reset values.
 ///
 /// The reset value is NOT the value of the register when the device is reset,
@@ -80,16 +101,41 @@ pub struct ConfigRegister {
     pub fields: Vec<RegisterField>,
 }
 
+impl ConfigRegister {
+    fn validate(&self) -> Result<()> {
+        if self.offset % 4 != 0 {
+            anyhow::bail!("Config register offset must be 4-byte aligned");
+        }
+        for field in &self.fields {
+            field.validate()?;
+        }
+        Ok(())
+    }
+}
+
 /// A range of bits in a register, with a name and a description
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegisterField {
-    pub bit_range: std::ops::RangeInclusive<u8>,
+    // RangeInclusive is not supported well since serde_yaml 0.9
+    pub bit_range: Vec<u8>,
     pub name: String,
     #[serde(default)]
     pub description: String,
-    // NOTE: use BTreeMap for strict ordering or digits and `_`
+    // NOTE: use BTreeMap for strict ordering for digits and `_`
     #[serde(default)]
     pub explaination: BTreeMap<String, String>,
+}
+
+impl RegisterField {
+    fn validate(&self) -> Result<()> {
+        if self.bit_range.len() != 2 {
+            anyhow::bail!("Invalid bit range: {:?}", self.bit_range);
+        }
+        if self.bit_range[0] < self.bit_range[1] {
+            anyhow::bail!("Invalid bit range: {:?}", self.bit_range);
+        }
+        Ok(())
+    }
 }
 
 pub struct ChipDB {
@@ -98,7 +144,7 @@ pub struct ChipDB {
 
 impl ChipDB {
     pub fn load() -> Result<Self> {
-        let families = vec![
+        let families: Vec<ChipFamily> = vec![
             serde_yaml::from_str(include_str!("../devices/0x10-CH56x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x11-CH55x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x12-CH54x.yaml"))?,
@@ -111,6 +157,9 @@ impl ChipDB {
             serde_yaml::from_str(include_str!("../devices/0x19-CH32V20x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x19-CH32V20x.yaml"))?,
         ];
+        for family in &families {
+            family.validate()?;
+        }
         Ok(ChipDB { families })
     }
 
