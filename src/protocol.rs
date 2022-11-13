@@ -200,6 +200,7 @@ impl Command {
                 buf.pwrite_with(len, 7, scroll::LE)?;
                 Ok(buf.to_vec())
             }
+            // TODO: DataErase, DataProgram, WriteOTP, ReadOTP, SetBaud
             _ => unimplemented!(),
         }
     }

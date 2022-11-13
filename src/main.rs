@@ -2,6 +2,7 @@ use std::{thread::sleep, time::Duration};
 
 use anyhow::Result;
 use clap::StructOpt;
+use hxdmp::hexdump;
 
 use wchisp::{constants::SECTOR_SIZE, Flashing};
 
@@ -48,8 +49,11 @@ enum Cli {
     Config {},
     /// Verify flash content
     Verify { path: String },
-    /// Read EEPROM
-    Eeprom {},
+    /// Dump EEPROM
+    Eeprom {
+        /// The path of the file to be written to
+        path: Option<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -132,11 +136,23 @@ fn main() -> Result<()> {
             flashing.verify(&binary)?;
             log::info!("Verified!");
         }
-        Cli::Eeprom {} => {
+        Cli::Eeprom { path } => {
             // FIXME: cannot read?
-            sleep(Duration::from_secs(1));
+            flashing.reidenfity()?;
+
+            sleep(Duration::from_millis(500));
+
             let eeprom = flashing.dump_eeprom()?;
-            log::info!("EEPROM size: {}", eeprom.len());
+            log::info!("EEPROM data size: {}", eeprom.len());
+
+            if let Some(ref path) = path {
+                std::fs::write(path, eeprom)?;
+                log::info!("EEPROM data saved to {}", path);
+            } else {
+                let mut buf = vec![];
+                hexdump(&eeprom, &mut buf)?;
+                println!("{}", String::from_utf8_lossy(&buf));
+            }
         }
         Cli::Config {} => {
             flashing.reset_config()?;

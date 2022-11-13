@@ -31,6 +31,7 @@ scroll = "0.11"
 simplelog = "0.12"
 hex = "0.4"
 ihex = "3"
+hxdmp = "0.2"
 object = { version = "0.29", default-features = false, features = [
     "elf",
     "read_core",

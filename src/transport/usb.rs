@@ -9,7 +9,7 @@ use super::Transport;
 const ENDPOINT_OUT: u8 = 0x02;
 const ENDPOINT_IN: u8 = 0x82;
 
-const TIMEOUT_MS: u64 = 500;
+const TIMEOUT_MS: u64 = 1000;
 
 pub struct UsbTransport {
     device_handle: DeviceHandle<rusb::Context>,
@@ -32,7 +32,7 @@ impl UsbTransport {
                 log::info!("Found USB Device {:?}", device);
                 Some(device)
             })
-            .ok_or(anyhow::format_err!("No WCH ISP USB device found"))?;
+            .ok_or(anyhow::format_err!("No WCH ISP USB device found(4348:55e0 device not found)"))?;
 
         let mut device_handle = device.open()?;
 

@@ -69,6 +69,23 @@ impl Flashing<UsbTransport> {
 }
 
 impl<T: Transport> Flashing<T> {
+    /// Reidentify chip using correct chip uid
+    pub fn reidenfity(&mut self) -> Result<()> {
+        let identify = Command::identify(self.chip.chip_id, self.chip.device_type);
+        let resp = self.transport.transfer(identify)?;
+
+        anyhow::ensure!(resp.payload()[0] == self.chip.chip_id, "chip id mismatch");
+        anyhow::ensure!(
+            resp.payload()[1] == self.chip.device_type,
+            "device type mismatch"
+        );
+
+        let read_conf = Command::read_config(CFG_MASK_ALL);
+        let _ = self.transport.transfer(read_conf)?;
+
+        Ok(())
+    }
+
     pub fn check_chip_name(&self, name: &str) -> Result<()> {
         if !self.chip.name.starts_with(name) {
             anyhow::bail!("chip name mismatch: {}", self.chip.name);
@@ -224,21 +241,40 @@ impl<T: Transport> Flashing<T> {
         Ok(())
     }
 
+    /// Dump EEPROM, i.e. data flash.
     pub fn dump_eeprom(&mut self) -> Result<Vec<u8>> {
         const CHUNK: usize = 0x3a;
+
         if self.chip.eeprom_size == 0 {
             anyhow::bail!("Chip does not support EEPROM");
         }
         let mut ret: Vec<u8> = Vec::with_capacity(self.chip.eeprom_size as _);
         let mut address = 0x0;
         while address < self.chip.eeprom_size as u32 {
-            let cmd = Command::data_read(address, CHUNK as u16);
+            let chunk_size = u16::min(CHUNK as u16, self.chip.eeprom_size as u16 - address as u16);
+
+            let cmd = Command::data_read(address, chunk_size);
             let resp = self.transport.transfer(cmd)?;
             anyhow::ensure!(resp.is_ok(), "data_read failed");
             address += CHUNK as u32;
-            assert!(resp.payload()[2..].len() == CHUNK);
+            anyhow::ensure!(
+                resp.payload()[2..].len() == chunk_size as usize,
+                "data_read length mismatch"
+            );
+            if resp.payload()[2..] == [0xfe, 0x00] {
+                anyhow::bail!("EEPROM read failed, required chunk size cannot be satisfied");
+            }
             ret.extend_from_slice(&resp.payload()[2..]);
+            if chunk_size < CHUNK as u16 {
+                break;
+            }
         }
+        anyhow::ensure!(
+            ret.len() == self.chip.eeprom_size as _,
+            "EEPROM size mismatch, expected {}, got {}",
+            self.chip.eeprom_size,
+            ret.len()
+        );
         Ok(ret)
     }
 
