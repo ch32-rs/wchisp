@@ -32,6 +32,10 @@ WRP: 0xFFFFFFFF
   `- Unprotected
 
 > wchisp flash ./path/to/firmware.{bin,hex,elf}
+
+> wchisp config info
+
+> wchisp config reset
 ```
 
 ## Tested On

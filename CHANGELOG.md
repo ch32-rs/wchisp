@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EEPROM dump support, fix #12
 - Refactor all subcommands, using clap v4
 - Probe support, multiple chips can be selected by an index
-
 ### Changed
 - Disable debug log by default
+
+### Fixed
+- Wrong timeout setting for usb transport
 
 ## [0.1.4] - 2022-11-13
 ### Added
