@@ -6,6 +6,21 @@ Command-line implementation of the WCHISPTool in Rust, by the ch32-rs team.
 
 This tool is a work in progress.
 
+## TODOs
+- [x] chip detection, identification
+- [x] chip config register dump
+  - works for most chips, but not all
+- [x] flash and verify code
+  - [x] ELF parsing
+  - [x] hex, bin, ihex support
+- [x] EEPROM dump
+- [ ] EEPROM write
+- [ ] write config registers
+  - [x] reset config registers to default(unprotected state)
+  - [ ] write config with friendly register names? like `wchisp config set SRAM_CODE_MODE=1 ...`
+- [x] select from multiple chips(using index)
+- [ ] ISP via UART or Net
+
 ## Usage
 
 ```console
