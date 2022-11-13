@@ -1,6 +1,6 @@
 [package]
 name = "wchisp"
-version = "0.1.4"
+version = "0.2.0"
 edition = "2021"
 authors = ["Andelf <andelf@gmail.com>"]
 repository = "https://github.com/ch32-rs/wchisp"
@@ -23,7 +23,7 @@ rand = "0.8"
 log = "0.4.8"
 serde = { version = "1.0.104", features = ["derive"] }
 serde_yaml = "0.9"
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 anyhow = "1.0"
 rusb = { version = "0.9.1" }
 bitfield = "0.14"

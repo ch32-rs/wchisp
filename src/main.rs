@@ -1,35 +1,40 @@
 use std::{thread::sleep, time::Duration};
 
 use anyhow::Result;
-use clap::StructOpt;
+
+use clap::{Parser, Subcommand};
 use hxdmp::hexdump;
 
-use wchisp::{constants::SECTOR_SIZE, Flashing};
-
-/// Common options and logic when interfacing with a [Probe].
-#[derive(clap::Parser, Debug)]
-pub struct ProbeOptions {
-    #[structopt(long)]
-    pub chip: Option<String>,
-}
+use wchisp::{constants::SECTOR_SIZE, transport::UsbTransport, Flashing};
 
 #[derive(clap::Parser)]
-#[clap(
-    name = "WCHISP Tool CLI",
-    about = "Command-line implementation of the WCHISPTool in Rust, by the ch32-rs team",
-    author = "Andelf <andelf@gmail.com>"
-)]
-enum Cli {
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Optional device index to operate on
+    #[arg(long, short = 'd', value_name = "INDEX")]
+    device: Option<usize>,
+
+    /// Turn debugging information on
+    #[arg(long = "verbose", short = 'v')]
+    debug: bool,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Probe any connected devices
+    Probe {},
     /// Get info about current connected chip
     Info {
-        #[clap(flatten)]
-        common: ProbeOptions,
+        /// Chip name(prefix) check
+        #[arg(long)]
+        chip: Option<String>,
     },
     /// Reset the target connected
     Reset {},
-    /// Remove code flash protect(RDPR and WPR) and reset
-    Unprotect {},
-    /// Erase flash
+    /// Erase code flash
     Erase {},
     /// Download to code flash and reset
     Flash {
@@ -45,64 +50,124 @@ enum Cli {
         #[clap(short = 'R', long)]
         no_reset: bool,
     },
-    /// Config CFG register
-    Config {},
-    /// Verify flash content
+    /// Verify code flash content
     Verify { path: String },
-    /// Dump EEPROM
+    /// EEPROM(data flash) operations
     Eeprom {
+        #[command(subcommand)]
+        command: Option<EepromCommands>,
+    },
+    /// Config CFG register
+    Config {
+        #[command(subcommand)]
+        command: Option<ConfigCommands>,
+    },
+}
+
+#[derive(Subcommand)]
+enum ConfigCommands {
+    /// Dump config register info
+    Info {},
+    /// Reset config register to default
+    Reset {},
+    /// Set config register to new value
+    Set {
+        /// New value of the config register
+        #[arg(value_name = "HEX")]
+        value: String,
+    },
+    /// Unprotect code flash
+    Unprotect {},
+}
+
+#[derive(Subcommand)]
+enum EepromCommands {
+    /// Dump EEPROM data
+    Dump {
         /// The path of the file to be written to
         path: Option<String>,
+    },
+    /// Programming EEPROM data
+    Flash {
+        /// The path to the file to be downloaded to the data flash
+        path: String,
+        /// Do not erase the data flash before flashing
+        #[clap(short = 'E', long)]
+        no_erase: bool,
+        /// Do not verify the data flash after flashing
+        #[clap(short = 'V', long)]
+        no_verify: bool,
     },
 }
 
 fn main() -> Result<()> {
-    let _ = simplelog::TermLogger::init(
-        simplelog::LevelFilter::Debug,
-        simplelog::Config::default(),
-        simplelog::TerminalMode::Mixed,
-        simplelog::ColorChoice::Auto,
-    );
+    let cli = Cli::parse();
 
-    let matches = Cli::parse();
-    let mut flashing = Flashing::new_from_usb()?;
+    if cli.debug {
+        let _ = simplelog::TermLogger::init(
+            simplelog::LevelFilter::Debug,
+            simplelog::Config::default(),
+            simplelog::TerminalMode::Mixed,
+            simplelog::ColorChoice::Auto,
+        );
+    } else {
+        let _ = simplelog::TermLogger::init(
+            simplelog::LevelFilter::Info,
+            simplelog::Config::default(),
+            simplelog::TerminalMode::Mixed,
+            simplelog::ColorChoice::Auto,
+        );
+    }
 
-    #[allow(unreachable_patterns)]
-    match matches {
-        Cli::Info { common } => {
-            if let Some(expected_chip_name) = common.chip {
+    let device_idx = cli.device.unwrap_or_default();
+
+    match cli.command {
+        None | Some(Commands::Probe {}) => {
+            let ndevices = UsbTransport::scan_devices()?;
+            log::info!("Found {} devices", ndevices);
+            log::info!("hint: use `wchisp info` to check chip info");
+            for i in 0..ndevices {
+                let mut trans = UsbTransport::open_nth(i)?;
+                let chip = Flashing::get_chip(&mut trans)?;
+                println!("Device #{}: {}", i, chip);
+            }
+        }
+        Some(Commands::Info { chip }) => {
+            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            if let Some(expected_chip_name) = chip {
                 flashing.check_chip_name(&expected_chip_name)?;
             }
             flashing.dump_info()?;
         }
-        Cli::Reset {} => {
+        Some(Commands::Reset {}) => {
+            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
             let _ = flashing.reset();
         }
-        Cli::Erase {} => {
+        Some(Commands::Erase {}) => {
+            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+
             let sectors = flashing.chip.flash_size / 1024;
             flashing.erase_code(sectors)?;
         }
-        Cli::Unprotect {} => {
-            log::warn!("Only applies to CH32F/CH32V devices for now");
-            log::warn!("Unprotect is deprected, use `config` to reset to default config");
-            // force unprotect, ignore check
-            flashing.unprotect(true)?;
-        }
         // WRITE_CONFIG => READ_CONFIG => ISP_KEY => ERASE => PROGRAM => VERIFY => RESET
-        Cli::Flash {
+        Some(Commands::Flash {
             path,
             no_erase,
             no_verify,
             no_reset,
-        } => {
-            flashing.dump_info()?;
-            let mut binary = wchisp::format::read_firmware_from_file(path)?;
+        }) => {
+            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
 
+            flashing.dump_info()?;
+
+            let mut binary = wchisp::format::read_firmware_from_file(path)?;
             extend_firmware_to_sector_boundary(&mut binary);
+            log::info!("Firmware size: {}", binary.len());
 
             if no_erase {
                 log::warn!("Skipping erase");
             } else {
+                log::info!("Erasing...");
                 let sectors = binary.len() / SECTOR_SIZE + 1;
                 flashing.erase_code(sectors as u32)?;
 
@@ -110,14 +175,13 @@ fn main() -> Result<()> {
                 log::info!("Erase done");
             }
 
-            log::info!("Firmware size: {}", binary.len());
             flashing.flash(&binary)?;
-
-            sleep(Duration::from_secs(1));
+            sleep(Duration::from_millis(500));
 
             if no_verify {
                 log::warn!("Skipping verify");
             } else {
+                log::info!("Verifying...");
                 flashing.verify(&binary)?;
                 sleep(Duration::from_secs(1));
                 log::info!("Verify OK");
@@ -130,34 +194,67 @@ fn main() -> Result<()> {
                 let _ = flashing.reset();
             }
         }
-        Cli::Verify { path } => {
-            let binary = wchisp::format::read_firmware_from_file(path)?;
+        Some(Commands::Verify { path }) => {
+            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut binary = wchisp::format::read_firmware_from_file(path)?;
+            extend_firmware_to_sector_boundary(&mut binary);
             log::info!("Firmware size: {}", binary.len());
+            log::info!("Verifying...");
             flashing.verify(&binary)?;
-            log::info!("Verified!");
+            log::info!("Verify OK");
         }
-        Cli::Eeprom { path } => {
-            // FIXME: cannot read?
-            flashing.reidenfity()?;
+        Some(Commands::Eeprom { command }) => {
+            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            match command {
+                None | Some(EepromCommands::Dump { .. }) => {
+                    flashing.reidenfity()?;
 
-            sleep(Duration::from_millis(500));
+                    sleep(Duration::from_millis(500));
 
-            let eeprom = flashing.dump_eeprom()?;
-            log::info!("EEPROM data size: {}", eeprom.len());
+                    let eeprom = flashing.dump_eeprom()?;
+                    log::info!("EEPROM data size: {}", eeprom.len());
 
-            if let Some(ref path) = path {
-                std::fs::write(path, eeprom)?;
-                log::info!("EEPROM data saved to {}", path);
-            } else {
-                let mut buf = vec![];
-                hexdump(&eeprom, &mut buf)?;
-                println!("{}", String::from_utf8_lossy(&buf));
+                    if let Some(EepromCommands::Dump {
+                        path: Some(ref path),
+                    }) = command
+                    {
+                        std::fs::write(path, eeprom)?;
+                        log::info!("EEPROM data saved to {}", path);
+                    } else {
+                        let mut buf = vec![];
+                        hexdump(&eeprom, &mut buf)?;
+                        println!("{}", String::from_utf8_lossy(&buf));
+                    }
+                }
+                Some(EepromCommands::Flash {
+                    //path,
+                    //no_erase,
+                    //no_verify,
+                    ..
+                }) => {
+                    unimplemented!()
+                }
             }
         }
-        Cli::Config {} => {
-            flashing.reset_config()?;
+        Some(Commands::Config { command }) => {
+            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            match command {
+                None | Some(ConfigCommands::Info {}) => {
+                    flashing.dump_config()?;
+                }
+                Some(ConfigCommands::Reset {}) => {
+                    flashing.reset_config()?;
+                }
+                Some(ConfigCommands::Set { value }) => {
+                    // flashing.write_config(value)?;
+                    log::info!("setting cfg value {}", value);
+                    unimplemented!()
+                }
+                Some(ConfigCommands::Unprotect {}) => {
+                    flashing.unprotect(true)?;
+                }
+            }
         }
-        _ => unimplemented!(),
     }
 
     Ok(())

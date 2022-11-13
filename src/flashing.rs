@@ -23,16 +23,22 @@ pub struct Flashing<T: Transport> {
 }
 
 impl Flashing<UsbTransport> {
-    pub fn new_from_usb() -> Result<Self> {
-        let mut transport = UsbTransport::open_any()?;
+    pub fn get_chip(transport: &mut UsbTransport) -> Result<Chip> {
+        let identify = Command::identify(0, 0);
+        let resp = transport.transfer(identify)?;
 
+        let chip_db = ChipDB::load()?;
+        let chip = chip_db.find_chip(resp.payload()[0], resp.payload()[1])?;
+
+        Ok(chip)
+    }
+
+    pub fn new_from_usb_transport(mut transport: UsbTransport) -> Result<Self> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
         anyhow::ensure!(resp.is_ok(), "idenfity chip failed");
 
-        let chip_db = ChipDB::load()?;
-
-        let chip = chip_db.find_chip(resp.payload()[0], resp.payload()[1])?;
+        let chip = Flashing::get_chip(&mut transport)?;
         log::debug!("found chip: {}", chip);
 
         let read_conf = Command::read_config(CFG_MASK_ALL);
@@ -66,6 +72,18 @@ impl Flashing<UsbTransport> {
         f.check_chip_uid()?;
         Ok(f)
     }
+
+    pub fn new_from_usb() -> Result<Self> {
+        let transport = UsbTransport::open_any()?;
+
+        Self::new_from_usb_transport(transport)
+    }
+
+    pub fn open_nth_usb_device(nth: usize) -> Result<Self> {
+        let transport = UsbTransport::open_nth(nth)?;
+        let flashing = Flashing::new_from_usb_transport(transport)?;
+        Ok(flashing)
+    }
 }
 
 impl<T: Transport> Flashing<T> {
@@ -88,7 +106,11 @@ impl<T: Transport> Flashing<T> {
 
     pub fn check_chip_name(&self, name: &str) -> Result<()> {
         if !self.chip.name.starts_with(name) {
-            anyhow::bail!("chip name mismatch: {}", self.chip.name);
+            anyhow::bail!(
+                "chip name mismatch: has {}, provided {}",
+                self.chip.name,
+                name
+            );
         }
         Ok(())
     }
@@ -321,12 +343,13 @@ impl<T: Transport> Flashing<T> {
         unimplemented!("TODO")
     }
 
-    fn dump_config(&mut self) -> Result<()> {
+    pub fn dump_config(&mut self) -> Result<()> {
         let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
         let resp = self.transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
 
         let raw = &resp.payload()[2..];
+        log::info!("Current config registers: {}", hex::encode(&raw));
 
         for reg_def in &self.chip.config_registers {
             let n = raw.pread_with::<u32>(reg_def.offset, LE)?;

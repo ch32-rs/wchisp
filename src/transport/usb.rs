@@ -9,14 +9,34 @@ use super::Transport;
 const ENDPOINT_OUT: u8 = 0x02;
 const ENDPOINT_IN: u8 = 0x82;
 
-const TIMEOUT_MS: u64 = 1000;
+const TIMEOUT_MS: u64 = 2000;
 
 pub struct UsbTransport {
     device_handle: DeviceHandle<rusb::Context>,
 }
 
 impl UsbTransport {
-    pub fn open_any() -> Result<UsbTransport> {
+    pub fn scan_devices() -> Result<usize> {
+        let context = Context::new()?;
+
+        let n = context
+            .devices()?
+            .iter()
+            .filter(|device| {
+                device
+                    .device_descriptor()
+                    .map(|desc| desc.vendor_id() == 0x4348 && desc.product_id() == 0x55e0)
+                    .unwrap_or(false)
+            })
+            .enumerate()
+            .map(|(i, device)| {
+                log::debug!("Found WCH ISP USB device #{}: [{:?}]", i, device);
+            })
+            .count();
+        Ok(n)
+    }
+
+    pub fn open_nth(nth: usize) -> Result<UsbTransport> {
         let context = Context::new()?;
 
         let device = context
@@ -28,11 +48,12 @@ impl UsbTransport {
                     .map(|desc| desc.vendor_id() == 0x4348 && desc.product_id() == 0x55e0)
                     .unwrap_or(false)
             })
-            .find_map(|device| {
-                log::info!("Found USB Device {:?}", device);
-                Some(device)
-            })
-            .ok_or(anyhow::format_err!("No WCH ISP USB device found(4348:55e0 device not found)"))?;
+            .nth(nth)
+            .ok_or(anyhow::format_err!(
+                "No WCH ISP USB device found(4348:55e0 device not found at index #{})",
+                nth
+            ))?;
+        log::debug!("Found USB Device {:?}", device);
 
         let mut device_handle = device.open()?;
 
@@ -64,6 +85,10 @@ impl UsbTransport {
         device_handle.claim_interface(0)?;
 
         Ok(UsbTransport { device_handle })
+    }
+
+    pub fn open_any() -> Result<UsbTransport> {
+        Self::open_nth(0)
     }
 }
 
