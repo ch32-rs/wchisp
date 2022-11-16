@@ -371,12 +371,16 @@ impl<T: Transport> Flashing<T> {
                 }
             }
 
+            // byte fields
             for field_def in &reg_def.fields {
                 let bit_width = (field_def.bit_range[0] - field_def.bit_range[1]) as u32 + 1;
                 let b = (n >> field_def.bit_range[1]) & (2_u32.pow(bit_width) - 1);
                 println!(
-                    "  [{}:{}] {} 0b{:b} (0x{:X})",
-                    field_def.bit_range[0], field_def.bit_range[1], field_def.name, b, b
+                    "  {:<7} {} 0x{:X} (0b{:b})",
+                    format!("[{:}:{:}]", field_def.bit_range[0], field_def.bit_range[1]),
+                    field_def.name,
+                    b,
+                    b
                 );
                 for (val, expain) in &field_def.explaination {
                     if val == "_" || Some(b) == parse_number(val) {
