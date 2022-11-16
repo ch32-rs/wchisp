@@ -210,8 +210,7 @@ fn main() -> Result<()> {
                 None | Some(EepromCommands::Dump { .. }) => {
                     flashing.reidenfity()?;
 
-                    sleep(Duration::from_millis(500));
-                    log::info!("Reading EEPROM...");
+                    log::info!("Reading EEPROM(Data Flash)...");
 
                     let eeprom = flashing.dump_eeprom()?;
                     log::info!("EEPROM data size: {}", eeprom.len());

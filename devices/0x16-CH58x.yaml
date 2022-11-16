@@ -30,7 +30,7 @@ config_registers:
           0: PB11
       # TODO: parse write protect address
   - offset: 0x08
-    name: CONFIG
+    name: USER_CFG
     description: User non-volatile configuration
     # Enable 2-wire debug
     reset: 0x4FFF0FD5

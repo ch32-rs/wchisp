@@ -121,6 +121,10 @@ impl Command {
         Command::DataRead { address, len }
     }
 
+    pub fn data_program(address: u32, data: Vec<u8>) -> Self {
+        Command::DataProgram { address, data }
+    }
+
     // TODO(visiblity)
     pub fn into_raw(self) -> Result<Vec<u8>> {
         match self {
@@ -200,7 +204,16 @@ impl Command {
                 buf.pwrite_with(len, 7, scroll::LE)?;
                 Ok(buf.to_vec())
             }
-            // TODO: DataErase, DataProgram, WriteOTP, ReadOTP, SetBaud
+            Command::DataProgram { address, data } => {
+                let mut buf = vec![0u8; 1 + 2 + 4 + data.len()];
+                buf[0] = commands::DATA_PROGRAM;
+                buf.pwrite_with(address, 3, scroll::LE)?;
+                buf[7..].copy_from_slice(&data);
+                let payload_size = buf.len() as u16 - 3;
+                buf.pwrite_with(payload_size, 1, scroll::LE)?;
+                Ok(buf)
+            }
+            // TODO: DataErase, WriteOTP, ReadOTP, SetBaud
             _ => unimplemented!(),
         }
     }
