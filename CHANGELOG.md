@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2022-11-13
 ### [Added]
 - EEPROM dump support, fix #12
+- EEPROM erase support
 - Refactor all subcommands, using clap v4
 - Probe support, multiple chips can be selected by an index
 - Progressbar for flash and verify commands
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Wrong timeout setting for usb transport
+- Enable adaptive timeout setting
 
 ## [0.1.4] - 2022-11-13
 ### Added

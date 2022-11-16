@@ -61,7 +61,11 @@ pub enum Command {
     /// Erase the Data Flash, almost the same as `Erase`
     DataErase { sectors: u32 },
     /// Program the Data Flash, almost the same as `Program`
-    DataProgram { address: u32, data: Vec<u8> },
+    DataProgram {
+        address: u32,
+        padding: u8,
+        data: Vec<u8>,
+    },
     /// Read the Data Flash
     DataRead { address: u32, len: u16 },
     /// Write OTP
@@ -121,8 +125,16 @@ impl Command {
         Command::DataRead { address, len }
     }
 
-    pub fn data_program(address: u32, data: Vec<u8>) -> Self {
-        Command::DataProgram { address, data }
+    pub fn data_program(address: u32, padding: u8, data: Vec<u8>) -> Self {
+        Command::DataProgram {
+            address,
+            padding,
+            data,
+        }
+    }
+
+    pub fn data_erase(sectors: u32) -> Self {
+        Command::DataErase { sectors }
     }
 
     // TODO(visiblity)
@@ -149,6 +161,9 @@ impl Command {
                 buf.extend(key);
                 Ok(buf)
             }
+            // a4
+            // 04 00
+            // 08 00 00 00
             Command::Erase { sectors } => {
                 let mut buf = [commands::ERASE, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00];
                 buf.pwrite_with(sectors, 3, scroll::LE)?;
@@ -204,16 +219,42 @@ impl Command {
                 buf.pwrite_with(len, 7, scroll::LE)?;
                 Ok(buf.to_vec())
             }
-            Command::DataProgram { address, data } => {
-                let mut buf = vec![0u8; 1 + 2 + 4 + data.len()];
+            // aa           command
+            // 3d 00        length
+            // 38 00 00 00  address
+            // 1c           padding
+            // ....         payload, using 8-byte key to encrypt
+            Command::DataProgram { address, padding, data } => {
+                let mut buf = vec![0u8; 1 + 2 + 4 + 1 + data.len()];
                 buf[0] = commands::DATA_PROGRAM;
                 buf.pwrite_with(address, 3, scroll::LE)?;
-                buf[7..].copy_from_slice(&data);
+                buf[7] = padding;
+                buf[8..].copy_from_slice(&data);
                 let payload_size = buf.len() as u16 - 3;
                 buf.pwrite_with(payload_size, 1, scroll::LE)?;
                 Ok(buf)
+
             }
-            // TODO: DataErase, WriteOTP, ReadOTP, SetBaud
+            // a9
+            // 05 00
+            // 00 00 00 00    ???
+            // 20             sectors of data flash
+            Command::DataErase { sectors } => {
+                let mut buf = [
+                    commands::DATA_ERASE,
+                    0x05,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                ];
+                // FIXME: is this correct?
+                buf[7] = sectors as u8;
+                Ok(buf.to_vec())
+            }
+            // TODO: WriteOTP, ReadOTP, SetBaud
             _ => unimplemented!(),
         }
     }

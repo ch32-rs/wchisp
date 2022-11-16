@@ -9,7 +9,7 @@ use super::Transport;
 const ENDPOINT_OUT: u8 = 0x02;
 const ENDPOINT_IN: u8 = 0x82;
 
-const TIMEOUT_MS: u64 = 2;
+const TIMEOUT_MS: u64 = 1;
 
 pub struct UsbTransport {
     device_handle: DeviceHandle<rusb::Context>,
@@ -100,7 +100,7 @@ impl Transport for UsbTransport {
     }
 
     fn recv_raw(&mut self) -> Result<Vec<u8>> {
-        let mut buf = [0u8; 256]; // enough for a USB packet
+        let mut buf = [0u8; 16 * 4];
         let nread = self.device_handle.read_bulk(
             ENDPOINT_IN,
             &mut buf,

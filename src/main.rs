@@ -87,6 +87,8 @@ enum EepromCommands {
         /// The path of the file to be written to
         path: Option<String>,
     },
+    /// Erase EEPROM data
+    Erase {},
     /// Programming EEPROM data
     Flash {
         /// The path to the file to be downloaded to the data flash
@@ -226,6 +228,13 @@ fn main() -> Result<()> {
                         hexdump(&eeprom, &mut buf)?;
                         println!("{}", String::from_utf8_lossy(&buf));
                     }
+                }
+                Some(EepromCommands::Erase {  }) => {
+                    flashing.reidenfity()?;
+
+                    log::info!("Erasing EEPROM(Data Flash)...");
+                    flashing.erase_data()?;
+                    log::info!("EEPROM erased");
                 }
                 Some(EepromCommands::Flash {
                     //path,

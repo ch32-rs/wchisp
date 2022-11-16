@@ -1,4 +1,6 @@
 //! Chip flashing routine
+use std::time::Duration;
+
 use anyhow::Result;
 use indicatif::ProgressBar;
 use scroll::{Pread, Pwrite, LE};
@@ -225,6 +227,10 @@ impl<T: Transport> Flashing<T> {
         Ok(())
     }
 
+    pub fn write_data_flash(&mut self, raw: &[u8]) -> Result<()> {
+        unimplemented!()
+    }
+
     pub fn verify(&mut self, raw: &[u8]) -> Result<()> {
         let key = self.xor_key();
         let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
@@ -347,18 +353,28 @@ impl<T: Transport> Flashing<T> {
             );
         }
         let erase = Command::erase(sectors);
-        let resp = self.transport.transfer(erase)?;
+        let resp = self
+            .transport
+            .transfer_with_wait(erase, Duration::from_millis(1000))?;
         anyhow::ensure!(resp.is_ok(), "erase failed");
 
         log::info!("Erased {} code flash sectors", sectors);
         Ok(())
     }
 
-    pub fn erase_data(&mut self, _sectors: u16) -> Result<()> {
+    pub fn erase_data(&mut self) -> Result<()> {
         if self.chip.eeprom_size == 0 {
             anyhow::bail!("chip doesn't support data EEPROM");
         }
-        unimplemented!("TODO")
+        let sectors = (self.chip.eeprom_size / 1024).max(1) as u16;
+        let erase = Command::data_erase(sectors as _);
+        let resp = self
+            .transport
+            .transfer_with_wait(erase, Duration::from_millis(1000))?;
+        anyhow::ensure!(resp.is_ok(), "erase_data failed");
+
+        log::info!("Erased {} data flash sectors", sectors);
+        Ok(())
     }
 
     pub fn dump_config(&mut self) -> Result<()> {
