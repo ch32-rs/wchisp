@@ -9,7 +9,7 @@ use super::Transport;
 const ENDPOINT_OUT: u8 = 0x02;
 const ENDPOINT_IN: u8 = 0x82;
 
-const TIMEOUT_MS: u64 = 1000;
+const TIMEOUT_MS: u64 = 2;
 
 pub struct UsbTransport {
     device_handle: DeviceHandle<rusb::Context>,
