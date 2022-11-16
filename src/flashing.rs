@@ -115,12 +115,21 @@ impl<T: Transport> Flashing<T> {
 
     pub fn dump_info(&mut self) -> Result<()> {
         if self.chip.eeprom_size > 0 {
-            log::info!(
-                "Chip: {} (Code Flash: {}KiB, Data EEPROM: {}KiB)",
-                self.chip,
-                self.chip.flash_size / 1024,
-                self.chip.eeprom_size / 1024
-            );
+            if self.chip.eeprom_size % 1024 != 0 {
+                log::info!(
+                    "Chip: {} (Code Flash: {}KiB, Data EEPROM: {} Bytes)",
+                    self.chip,
+                    self.chip.flash_size / 1024,
+                    self.chip.eeprom_size
+                );
+            } else {
+                log::info!(
+                    "Chip: {} (Code Flash: {}KiB, Data EEPROM: {}KiB)",
+                    self.chip,
+                    self.chip.flash_size / 1024,
+                    self.chip.eeprom_size / 1024
+                );
+            }
         } else {
             log::info!(
                 "Chip: {} (Code Flash: {}KiB)",
