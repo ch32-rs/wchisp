@@ -71,6 +71,8 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
   - CH58xM-EVT
 - [x] CH573
   - [WeActStudio.WCH-BLE-Core](https://github.com/WeActStudio/WeActStudio.WCH-BLE-Core)
+- [x] CH579
+  - BTVER: 02.90
 - [x] CH559
   - CH559TL_MINIEVT_V20 by wch.cn
 - [x] CH32V203
