@@ -4,6 +4,23 @@ mcu_type: 0
 device_type: 0x10
 support_serial: true
 description: CH56x Series, RISC-V3A (CH569/CH565), ARM9 like (CH563/CH561), RISC (CH566/CH567/CH568) NDS32? (CH568)
+# Section 2.2.1 On-chip non-volatile memory map
+config_registers_ch569: &config_registers_ch_565_ch569
+  - offset: 0x00
+    name: UNKNOWN0
+    description: Reserved 32-bit word
+    reset: 0xFFFFFFFF
+    type: u32
+  - offset: 0x04
+    name: UNKNOWN1
+    description: Reserved 32-bit word
+    reset: 0xFFFFFFFF
+    type: u32
+  - offset: 0x08
+    name: UNKNOWN2
+    description: Reserved 32-bit word
+    reset: 0xFFFFFFFF
+    type: u32
 variants:
   # use 0x46 to probe
   - name: CH561
@@ -31,6 +48,7 @@ variants:
     support_usb: true
     support_net: false
     eeprom_start_addr: 0
+    config_registers: *config_registers_ch_565_ch569
 
   - name: CH566
     chip_id: 0x66
@@ -60,3 +78,4 @@ variants:
     eeprom_size: 32K
     support_usb: true
     support_net: false
+    config_registers: *config_registers_ch_565_ch569
