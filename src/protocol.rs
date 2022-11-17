@@ -224,7 +224,11 @@ impl Command {
             // 38 00 00 00  address
             // 1c           padding
             // ....         payload, using 8-byte key to encrypt
-            Command::DataProgram { address, padding, data } => {
+            Command::DataProgram {
+                address,
+                padding,
+                data,
+            } => {
                 let mut buf = vec![0u8; 1 + 2 + 4 + 1 + data.len()];
                 buf[0] = commands::DATA_PROGRAM;
                 buf.pwrite_with(address, 3, scroll::LE)?;
@@ -233,7 +237,6 @@ impl Command {
                 let payload_size = buf.len() as u16 - 3;
                 buf.pwrite_with(payload_size, 1, scroll::LE)?;
                 Ok(buf)
-
             }
             // a9
             // 05 00

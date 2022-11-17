@@ -22,7 +22,7 @@ This tool is a work in progress.
   - [ ] write config with friendly register names? like `wchisp config set SRAM_CODE_MODE=1 ...`
 - [x] EEPROM dump
 - [x] EEPROM erase
-- [ ] EEPROM write
+- [x] EEPROM write
 - [x] select from multiple chips(using index) `wchisp -d 0 info`
 - [ ] ISP via UART or Net
 

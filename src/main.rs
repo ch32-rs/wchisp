@@ -90,15 +90,12 @@ enum EepromCommands {
     /// Erase EEPROM data
     Erase {},
     /// Programming EEPROM data
-    Flash {
+    Write {
         /// The path to the file to be downloaded to the data flash
         path: String,
-        /// Do not erase the data flash before flashing
+        /// Do not erase the data flash before programming
         #[clap(short = 'E', long)]
         no_erase: bool,
-        /// Do not verify the data flash after flashing
-        #[clap(short = 'V', long)]
-        no_verify: bool,
     },
 }
 
@@ -229,20 +226,37 @@ fn main() -> Result<()> {
                         println!("{}", String::from_utf8_lossy(&buf));
                     }
                 }
-                Some(EepromCommands::Erase {  }) => {
+                Some(EepromCommands::Erase {}) => {
                     flashing.reidenfity()?;
 
                     log::info!("Erasing EEPROM(Data Flash)...");
                     flashing.erase_data()?;
                     log::info!("EEPROM erased");
                 }
-                Some(EepromCommands::Flash {
-                    //path,
-                    //no_erase,
-                    //no_verify,
-                    ..
-                }) => {
-                    unimplemented!()
+                Some(EepromCommands::Write { path, no_erase }) => {
+                    flashing.reidenfity()?;
+
+                    if no_erase {
+                        log::warn!("Skipping erase");
+                    } else {
+                        log::info!("Erasing EEPROM(Data Flash)...");
+                        flashing.erase_data()?;
+                        log::info!("EEPROM erased");
+                    }
+
+                    let eeprom = std::fs::read(path)?;
+                    log::info!("Read {} bytes from bin file", eeprom.len());
+                    if eeprom.len() as u32 != flashing.chip.eeprom_size {
+                        anyhow::bail!(
+                            "EEPROM size mismatch: expected {}, got {}",
+                            flashing.chip.eeprom_size,
+                            eeprom.len()
+                        );
+                    }
+
+                    log::info!("Writing EEPROM(Data Flash)...");
+                    flashing.write_eeprom(&eeprom)?;
+                    log::info!("EEPROM written");
                 }
             }
         }

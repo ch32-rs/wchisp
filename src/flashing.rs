@@ -227,8 +227,30 @@ impl<T: Transport> Flashing<T> {
         Ok(())
     }
 
-    pub fn write_data_flash(&mut self, raw: &[u8]) -> Result<()> {
-        unimplemented!()
+    pub fn write_eeprom(&mut self, raw: &[u8]) -> Result<()> {
+        let key = self.xor_key();
+        // let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+
+        // NOTE: use all-zero key seed for now.
+        let isp_key = Command::isp_key(vec![0; 0x1e]);
+        let resp = self.transport.transfer(isp_key)?;
+        anyhow::ensure!(resp.is_ok(), "isp_key failed");
+        // anyhow::ensure!(resp.payload()[0] == key_checksum, "isp_key checksum failed");
+
+        const CHUNK: usize = 56;
+        let mut address = 0x0;
+
+        let bar = ProgressBar::new(raw.len() as _);
+        for ch in raw.chunks(CHUNK) {
+            self.write_data_chunk(address, ch, key)?;
+            address += ch.len() as u32;
+            bar.inc(ch.len() as _);
+        }
+        // NOTE: require a write action of empty data for success flashing
+        self.flash_chunk(address, &[], key)?;
+        bar.finish();
+
+        Ok(())
     }
 
     pub fn verify(&mut self, raw: &[u8]) -> Result<()> {
@@ -330,6 +352,18 @@ impl<T: Transport> Flashing<T> {
         let cmd = Command::program(address, padding, xored.collect());
         let resp = self.transport.transfer(cmd)?;
         anyhow::ensure!(resp.is_ok(), "program 0x{:08x} failed", address);
+        Ok(())
+    }
+
+    fn write_data_chunk(&mut self, address: u32, raw: &[u8], key: [u8; 8]) -> Result<()> {
+        let xored = raw.iter().enumerate().map(|(i, x)| x ^ key[i % 8]);
+        let padding = rand::random();
+        let cmd = Command::data_program(address, padding, xored.collect());
+        // NOTE: EEPROM write might be slow. Use 5ms timeout.
+        let resp = self
+            .transport
+            .transfer_with_wait(cmd, Duration::from_millis(5))?;
+        anyhow::ensure!(resp.is_ok(), "program data 0x{:08x} failed", address);
         Ok(())
     }
 
