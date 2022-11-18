@@ -183,7 +183,6 @@ fn main() -> Result<()> {
             } else {
                 log::info!("Verifying...");
                 flashing.verify(&binary)?;
-                sleep(Duration::from_secs(1));
                 log::info!("Verify OK");
             }
 
