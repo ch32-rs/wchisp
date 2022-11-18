@@ -350,7 +350,9 @@ impl<T: Transport> Flashing<T> {
         let xored = raw.iter().enumerate().map(|(i, x)| x ^ key[i % 8]);
         let padding = rand::random();
         let cmd = Command::program(address, padding, xored.collect());
-        let resp = self.transport.transfer(cmd)?;
+        let resp = self
+            .transport
+            .transfer_with_wait(cmd, Duration::from_millis(5))?;
         anyhow::ensure!(resp.is_ok(), "program 0x{:08x} failed", address);
         Ok(())
     }

@@ -5,12 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### [Added]
+- EEPROM erase support
+- EEPROM write support
+- Config register for CH57x
+
+### Fixed
+- Enable adaptive timeout setting
 
 ## [0.2.0] - 2022-11-13
 ### [Added]
 - EEPROM dump support, fix #12
-- EEPROM erase support
-- EEPROM write support
 - Refactor all subcommands, using clap v4
 - Probe support, multiple chips can be selected by an index
 - Progressbar for flash and verify commands
@@ -20,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Wrong timeout setting for usb transport
-- Enable adaptive timeout setting
 
 ## [0.1.4] - 2022-11-13
 ### Added
