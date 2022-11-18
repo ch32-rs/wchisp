@@ -100,7 +100,7 @@ impl Transport for UsbTransport {
     }
 
     fn recv_raw(&mut self) -> Result<Vec<u8>> {
-        let mut buf = [0u8; 16 * 4];
+        let mut buf = [0u8; 64];
         let nread = self.device_handle.read_bulk(
             ENDPOINT_IN,
             &mut buf,
