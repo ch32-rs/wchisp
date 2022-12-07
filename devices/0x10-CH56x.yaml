@@ -17,10 +17,73 @@ config_registers_ch569: &config_registers_ch_565_ch569
     reset: 0xFFFFFFFF
     type: u32
   - offset: 0x08
-    name: UNKNOWN2
-    description: Reserved 32-bit word
-    reset: 0xFFFFFFFF
+    name: NV_INFO
+    description: Non-volatile information
+    reset: 0x8FFFF2E5
     type: u32
+    fields:
+      - bit_range: [31,30]
+        name: USER_MEM
+        description: System RAMX/ROM capacity redefine configuration.
+        explaination:
+          0b00: RAMX 32KB + ROM 96KB
+          0b01: RAMX 64KB + ROM 64KB
+          _: RAMX 96KB + ROM 32KB
+      - bit_range: [29,29]
+        name: LOCKUP_RST_EN
+        description: Core LOCKUP reset system enable
+        explaination:
+          1: Reset
+          0: NotReset
+      - bit_range: [28,28]
+        name: RESERVED1
+        explaination:
+          0: Reserved
+          _: Error
+      - bit_range: [27,12]
+        name: RESERVED2
+        explaination:
+          0xffff: Reserved
+          _: Error
+      - bit_range: [11,10]
+        name: RESERVED3
+        explaination:
+          0b00: Reserved
+          _: Error
+      - bit_range: [9,8]
+        name: RESERVED4
+        explaination:
+          0b10: Reserved
+          _: Error
+      - bit_range: [7,7]
+        name: CODE_READ_EN
+        description: External programmer read FLASH enable
+        explaination:
+          1: Enable
+          0: Disable
+      - bit_range: [6,6]
+        name: BOOT_EN
+        description: Bootloader function enable
+        explaination:
+          1: Enable
+          0: Disable
+      - bit_range: [5,5]
+        name: DEBUG_EN
+        description: Debug interface enable
+        explaination:
+          1: Enable
+          0: Disable
+      - bit_range: [4,4]
+        name: RESET_EN
+        description: External reset enable
+        explaination:
+          1: Enable via PB15
+          0: Disable, PB15 is used as GPIO
+      - bit_range: [3,0]
+        name: RESERVED5
+        explaination:
+          0b0101: Reserved
+          _: Error
 variants:
   # use 0x46 to probe
   - name: CH561
