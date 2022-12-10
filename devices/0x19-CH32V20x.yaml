@@ -73,7 +73,7 @@ config_registers:
 variants:
   - name: CH32V208WBU6
     chip_id: 0x80
-    flash_size: 480K
+    flash_size: 128K
   - name: CH32V208RBT6
     chip_id: 0x81
     flash_size: 128K
