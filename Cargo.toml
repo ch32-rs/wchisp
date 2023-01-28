@@ -1,6 +1,6 @@
 [package]
 name = "wchisp"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Andelf <andelf@gmail.com>"]
 repository = "https://github.com/ch32-rs/wchisp"
@@ -20,8 +20,8 @@ vendored-libusb = ["rusb/vendored"]
 
 [dependencies]
 rand = "0.8"
-log = "0.4.8"
-serde = { version = "1.0.104", features = ["derive"] }
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1.0"
@@ -32,7 +32,7 @@ simplelog = "0.12"
 hex = "0.4"
 ihex = "3"
 hxdmp = "0.2"
-object = { version = "0.29", default-features = false, features = [
+object = { version = "0.30", default-features = false, features = [
     "elf",
     "read_core",
     "std",
