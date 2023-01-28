@@ -143,7 +143,7 @@ impl<T: Transport> Flashing<T> {
             "Chip UID: {}",
             self.chip_uid
                 .iter()
-                .map(|x| format!("{:02x}", x))
+                .map(|x| format!("{:02X}", x))
                 .collect::<Vec<_>>()
                 .join("-")
         );
@@ -352,7 +352,7 @@ impl<T: Transport> Flashing<T> {
         let cmd = Command::program(address, padding, xored.collect());
         let resp = self
             .transport
-            .transfer_with_wait(cmd, Duration::from_millis(5))?;
+            .transfer_with_wait(cmd, Duration::from_millis(300))?;
         anyhow::ensure!(resp.is_ok(), "program 0x{:08x} failed", address);
         Ok(())
     }
@@ -391,7 +391,7 @@ impl<T: Transport> Flashing<T> {
         let erase = Command::erase(sectors);
         let resp = self
             .transport
-            .transfer_with_wait(erase, Duration::from_millis(1000))?;
+            .transfer_with_wait(erase, Duration::from_millis(5000))?;
         anyhow::ensure!(resp.is_ok(), "erase failed");
 
         log::info!("Erased {} code flash sectors", sectors);
@@ -458,7 +458,7 @@ impl<T: Transport> Flashing<T> {
     // NOTE: XOR key for all-zero key seed
     fn xor_key(&self) -> [u8; 8] {
         let checksum = self
-            .chip_uid
+            .chip_uid()
             .iter()
             .fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
         let mut key = [checksum; 8];
@@ -468,7 +468,11 @@ impl<T: Transport> Flashing<T> {
     }
 
     pub fn chip_uid(&self) -> &[u8] {
-        &self.chip_uid[..self.chip.uid_size()]
+        let uid_size = self.chip.uid_size();
+        //if self.bootloader_version < [0, 2, 4, 0] {
+        //    uid_size = 4
+        //}
+        &self.chip_uid[..uid_size]
     }
 
     fn check_chip_uid(&self) -> Result<()> {

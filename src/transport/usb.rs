@@ -99,13 +99,12 @@ impl Transport for UsbTransport {
         Ok(())
     }
 
-    fn recv_raw(&mut self) -> Result<Vec<u8>> {
+    fn recv_raw(&mut self, timeout: Duration) -> Result<Vec<u8>> {
         let mut buf = [0u8; 64];
-        let nread = self.device_handle.read_bulk(
-            ENDPOINT_IN,
-            &mut buf,
-            Duration::from_millis(TIMEOUT_MS),
-        )?;
+
+        let nread = self
+            .device_handle
+            .read_bulk(ENDPOINT_IN, &mut buf, timeout)?;
         Ok(buf[..nread].to_vec())
     }
 }
