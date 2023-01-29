@@ -35,7 +35,10 @@ config_registers_ch571_ch573: &config_registers_ch571_ch573
   - offset: 0x08
     name: USER_CFG
     description: User config register
-    reset: 0x4FFF0F4D
+    # reset: 0x4FFF0F4D
+    # CFG_DEBUG_EN=1、CFG_RESET_EN=0、CFG_ROM_READ=1
+    # enable 2-wire debug
+    reset: 0x4FFF0FD5
     type: u32
     fields:
       - bit_range: [2, 0]
