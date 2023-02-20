@@ -55,7 +55,19 @@ impl UsbTransport {
             ))?;
         log::debug!("Found USB Device {:?}", device);
 
-        let mut device_handle = device.open()?;
+        let mut device_handle = match device.open() {
+            Ok(handle) => handle,
+            #[cfg(target_os = "windows")]
+            Err(rusb::Error::NotSupported) => {
+                log::error!("Failed to open USB device: {:?}", device);
+                log::warn!("It's likely no WinUSB/LibUSB drivers insalled. Please install it from Zadig. See also: https://zadig.akeo.ie");
+                anyhow::bail!("Failed to open USB device on Windows");
+            }
+            Err(e) => {
+                log::error!("Failed to open USB device: {:?}", e);
+                anyhow::bail!("Failed to open USB device");
+            }
+        };
 
         let config = device.config_descriptor(0)?;
 
