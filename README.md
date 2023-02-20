@@ -28,14 +28,44 @@ This tool is a work in progress.
 - [x] EEPROM dump
 - [x] EEPROM erase
 - [x] EEPROM write
-- [x] select from multiple chips(using `-d` to select index) `wchisp -d 0 info`
+- [x] select from multiple chips(using `-d` to select device index) `wchisp -d 0 info`
 - [ ] ISP via UART or Net
+
+## Installing
+
+```console
+# install libusb for your platform
+# macOS
+> brew install libusb
+# Ubuntu
+> sudo apt install libusb-1.0-0-dev
+
+# install wchisp
+> cargo install wchisp --git https://github.com/ch32-rs/wchisp
+# or use
+> cargo install wchisp --force
+```
+
+### Note for Windows
+
+If you are using Windows, you need to install the WinUSB driver for your device.
+See [Zadig](https://zadig.akeo.ie/).
+
+NOTE: This is not compatible with the Official WCH driver you installed with IDE.
+
+### Note for Linux
+
+If you are using Linux, you need to set the udev rules for your device.
+
+```text
+# /etc/udev/rules.d/50-wchisp.rules
+SUBSYSTEM=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", MODE="0666"
+# or replace MODE="0666" with GROUP="plugdev" or something else
+```
 
 ## Usage
 
 ```console
-> cargo install wchisp --git https://github.com/ch32-rs/wchisp
-
 > wchisp info
 14:51:24 [INFO] Chip: CH32V307VCT6[0x7017] (Code Flash: 256KiB)
 14:51:24 [INFO] Chip UID: 30-78-3e-26-3b-38-a9-d6
