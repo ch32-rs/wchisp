@@ -6,7 +6,12 @@ Command-line implementation of the WCHISPTool in Rust, by the ch32-rs team.
 
 This tool is a work in progress.
 
+- **NOTE**: CH32V003 does not have a USB ISP interface, use WCH-Link to program
+- **NOTE**: This tool is for USB ISP, not using with WCH-Link
+  - Currently I'm working on a WCH-Link implementation
+
 ## TODOs
+
 - [x] chip detection, identification
   - `wchisp probe`
   - `wchisp info`
@@ -16,14 +21,14 @@ This tool is a work in progress.
   - [x] skip erasing, verifying, resetting
 - [x] chip config register dump
   - `wchisp config`
-  - works for most chips, but not all
+  - works for most chips, but not all. Issues and PRs are welcomed
 - [ ] write config registers
-  - [x] reset config registers to default(unprotected state)
+  - [x] reset config registers to default(unprotected, debug-enabled state)
   - [ ] write config with friendly register names? like `wchisp config set SRAM_CODE_MODE=1 ...`
 - [x] EEPROM dump
 - [x] EEPROM erase
 - [x] EEPROM write
-- [x] select from multiple chips(using index) `wchisp -d 0 info`
+- [x] select from multiple chips(using `-d` to select index) `wchisp -d 0 info`
 - [ ] ISP via UART or Net
 
 ## Usage

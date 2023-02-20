@@ -7,13 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2023-02-20
+
+### [Added]
+
+- Enable 2-wire debug for ch57x, update default reset config reg values
+
 ### Fixed
 
 - Hang on Linux caused by libusb timeout #22
 
 ## [0.2.1] - 2023-01-28
 
-### [Added]
+### Added
 
 - EEPROM erase support
 - EEPROM write support
@@ -25,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2022-11-13
 
-### [Added]
+### Added
 
 - EEPROM dump support, fix #12
 - Refactor all subcommands, using clap v4
