@@ -63,8 +63,14 @@ impl UsbTransport {
                 log::warn!("It's likely no WinUSB/LibUSB drivers insalled. Please install it from Zadig. See also: https://zadig.akeo.ie");
                 anyhow::bail!("Failed to open USB device on Windows");
             }
+            #[cfg(target_os = "linux")]
+            Err(rusb::Error::Access) => {
+                log::error!("Failed to open USB device: {:?}", device);
+                log::warn!("It's likely the udev rules is not installed properly. Please refer to README.md for more details.");
+                anyhow::bail!("Failed to open USB device on Linux due to no enough permission");
+            }
             Err(e) => {
-                log::error!("Failed to open USB device: {:?}", e);
+                log::error!("Failed to open USB device: {}", e);
                 anyhow::bail!("Failed to open USB device");
             }
         };
