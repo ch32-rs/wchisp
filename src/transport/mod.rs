@@ -9,6 +9,8 @@ pub use self::usb::UsbTransport;
 
 mod usb;
 
+const DEFAULT_TRANSPORT_TIMEOUT_MS: u64 = 1000;
+
 /// Abstraction of the transport layer.
 /// Might be a USB, a serial port, or Network.
 pub trait Transport {
@@ -16,7 +18,7 @@ pub trait Transport {
     fn recv_raw(&mut self, timeout: Duration) -> Result<Vec<u8>>;
 
     fn transfer(&mut self, cmd: Command) -> Result<Response> {
-        self.transfer_with_wait(cmd, Duration::default())
+        self.transfer_with_wait(cmd, Duration::from_millis(DEFAULT_TRANSPORT_TIMEOUT_MS))
     }
 
     fn transfer_with_wait(&mut self, cmd: Command, wait: Duration) -> Result<Response> {
