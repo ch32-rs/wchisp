@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Refine device opening error message on Windows and Linux
+
 ## [0.2.2] - 2023-02-20
 
-### [Added]
+### Added
 
 - Enable 2-wire debug for ch57x, update default reset config reg values
 
