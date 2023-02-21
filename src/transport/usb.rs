@@ -113,7 +113,7 @@ impl UsbTransport {
 impl Drop for UsbTransport {
     fn drop(&mut self) {
         self.device_handle.release_interface(0).unwrap();
-        // self.device_handle.reset().unwrap();
+        self.device_handle.reset().unwrap();
     }
 }
 

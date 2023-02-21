@@ -1,5 +1,5 @@
 //! Abstract Device transport interface.
-use std::time::Duration;
+use std::{time::Duration, thread::sleep};
 
 use anyhow::Result;
 
@@ -25,6 +25,7 @@ pub trait Transport {
         let req = &cmd.into_raw()?;
         log::debug!("=> {}   {}", hex::encode(&req[..3]), hex::encode(&req[3..]));
         self.send_raw(&req)?;
+        sleep(Duration::from_micros(1)); // required for some Linux platform
 
         let resp = self.recv_raw(wait)?;
         anyhow::ensure!(req[0] == resp[0], "response command type mismatch");
