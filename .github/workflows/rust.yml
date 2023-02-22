@@ -3,8 +3,12 @@ name: Rust
 on:
   push:
     branches: [ main ]
+    paths:
+      - "!**.md"
   pull_request:
     branches: [ main ]
+    paths:
+      - "!**.md"
 
 env:
   CARGO_TERM_COLOR: always

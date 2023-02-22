@@ -46,6 +46,11 @@ This tool is a work in progress.
 > cargo install wchisp --force
 ```
 
+### Prebuilt Binaries
+
+Prebuilt binaries are available on the Github Actions Page.
+Click the newest runs at [Github Actions Page](https://github.com/ch32-rs/wchisp/actions/workflows/rust.yml) and download the binary from "Artifacts" section.
+
 ### Note for Windows
 
 If you are using Windows, you need to install the WinUSB driver for your device.
