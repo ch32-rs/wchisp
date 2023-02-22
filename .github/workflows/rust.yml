@@ -4,11 +4,18 @@ on:
   push:
     branches: [ main ]
     paths:
+      - "Cargo.toml"
+      - "src/**"
+      - "devices/**"
       - "!**.md"
   pull_request:
     branches: [ main ]
     paths:
+      - "Cargo.toml"
+      - "src/**"
+      - "devices/**"
       - "!**.md"
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
