@@ -3,16 +3,8 @@ name: Rust
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'devices/**'
-      - 'Cargo.toml'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'devices/**'
-      - 'Cargo.toml'
 
 env:
   CARGO_TERM_COLOR: always
