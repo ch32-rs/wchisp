@@ -4,14 +4,14 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'src'
-      - 'devices'
+      - 'src/**'
+      - 'devices/**'
       - 'Cargo.toml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'src'
-      - 'devices'
+      - 'src/**'
+      - 'devices/**'
       - 'Cargo.toml'
 
 env:
@@ -31,9 +31,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --release
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test
     - name: Run help
       run: cargo run -- --help
     - uses: actions/upload-artifact@v3
