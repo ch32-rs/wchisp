@@ -33,13 +33,17 @@ config_registers:
     name: USER_CFG
     description: User non-volatile configuration
     # CFG_DEBUG_EN=1、CFG_RESET_EN=0、CFG_ROM_READ=1
-    # Enable 2-wire debug: 0x4FFF0FD5
+    # Enable 2-wire debug
+    # reset: 0xd73f0f4d
     # See-also: #26
-    reset: 0x4d0fff4f
+    reset: 0x4d0fff4f # official default
     type: u32
     fields:
       - bit_range: [2, 0]
         name: RESERVED
+        explaination:
+          0b101: Default
+          _: Changed
       - bit_range: [3, 3]
         name: CFG_RESET_EN
         description: "RST# external manual reset input pin enable"
@@ -68,9 +72,9 @@ config_registers:
           1: Read enable
       - bit_range: [27, 8]
         name: RESERVED
-        #explaination:
-        #  0xFFF0F: Default
-        #  _: Error
+        explaination:
+          0xFFF0F: Default
+          _: Changed
       - bit_range: [31, 28]
         name: VALID_SIG
         description: "Configuration information valid flag, fixed value"
