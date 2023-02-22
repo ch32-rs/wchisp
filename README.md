@@ -23,7 +23,7 @@ This tool is a work in progress.
   - `wchisp config`
   - works for most chips, but not all. Issues and PRs are welcomed
 - [ ] write config registers
-  - [x] reset config registers to default(unprotected, debug-enabled state)
+  - [x] reset config registers to default
   - [ ] write config with friendly register names? like `wchisp config set SRAM_CODE_MODE=1 ...`
 - [x] EEPROM dump
 - [x] EEPROM erase

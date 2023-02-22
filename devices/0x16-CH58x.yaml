@@ -33,8 +33,9 @@ config_registers:
     name: USER_CFG
     description: User non-volatile configuration
     # CFG_DEBUG_EN=1、CFG_RESET_EN=0、CFG_ROM_READ=1
-    # Enable 2-wire debug
-    reset: 0x4FFF0FD5
+    # Enable 2-wire debug: 0x4FFF0FD5
+    # See-also: #26
+    reset: 0x4d0fff4f
     type: u32
     fields:
       - bit_range: [2, 0]
@@ -69,6 +70,7 @@ config_registers:
         name: RESERVED
         #explaination:
         #  0xFFF0F: Default
+        #  _: Error
       - bit_range: [31, 28]
         name: VALID_SIG
         description: "Configuration information valid flag, fixed value"
