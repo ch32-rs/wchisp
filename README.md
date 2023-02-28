@@ -8,7 +8,7 @@ This tool is a work in progress.
 
 - **NOTE**: CH32V003 does not have a USB ISP interface, use WCH-Link to program
 - **NOTE**: This tool is for USB ISP, not using with WCH-Link
-  - Currently I'm working on a WCH-Link implementation
+  - [ch32-rs/wlink](https://github.com/ch32-rs/wlink) is a command line tool for WCH-Link
 
 ## TODOs
 
