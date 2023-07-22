@@ -414,7 +414,9 @@ impl<T: Transport> Flashing<T> {
     }
 
     pub fn dump_config(&mut self) -> Result<()> {
-        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        // CH32X03x chips do not support bit mask read
+        // let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let read_conf = Command::read_config(CFG_MASK_ALL);
         let resp = self.transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
 

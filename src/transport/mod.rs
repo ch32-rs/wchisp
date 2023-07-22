@@ -1,5 +1,5 @@
 //! Abstract Device transport interface.
-use std::{time::Duration, thread::sleep};
+use std::{thread::sleep, time::Duration};
 
 use anyhow::Result;
 

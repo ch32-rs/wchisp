@@ -267,7 +267,9 @@ fn main() -> Result<()> {
                 }
                 Some(ConfigCommands::Reset {}) => {
                     flashing.reset_config()?;
-                    log::info!("Config register restored to default value(non-protected, debug-enabled)");
+                    log::info!(
+                        "Config register restored to default value(non-protected, debug-enabled)"
+                    );
                 }
                 Some(ConfigCommands::Set { value }) => {
                     // flashing.write_config(value)?;
