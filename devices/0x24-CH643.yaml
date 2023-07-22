@@ -8,6 +8,7 @@ support_usb: true
 support_serial: true
 description: CH643 RISC-V4C RGB Display Driver Series
 variants:
+  # NOTE: These chips share the same flash size, so we can use a single variant
   - name: CH643
     # 48 - CH643W
     # 49 - CH643Q
