@@ -6,7 +6,7 @@ Command-line implementation of the WCHISPTool in Rust, by the ch32-rs team.
 
 This tool is a work in progress.
 
-- **NOTE**: CH32V003 does not have a USB ISP interface, use WCH-Link to program
+- **NOTE**: CH32V003 **DOES NOTE** have a USB ISP interface, use WCH-Link to program
 - **NOTE**: This tool is for USB ISP, not using with WCH-Link
   - [ch32-rs/wlink](https://github.com/ch32-rs/wlink) is a command line tool for WCH-Link
 

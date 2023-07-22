@@ -63,5 +63,6 @@ variants:
     flash_size: 32K
   - name: CH32V103(C8T6|C8U6|R8T6)
     chip_id: 0x33
+    # 63 *8*6
     alt_chip_ids: ["ALL"]
     flash_size: 64K
