@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add CH59x support
 - Add CH32X03x support
 - Add CH643 support(not tested)
+- Add prebuilt binaries for Windows, Linux and macOS in the nightly release page
 
 ### Fixed
 

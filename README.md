@@ -33,6 +33,12 @@ This tool is a work in progress.
 
 ## Installing
 
+The prebuilt binaries are available on the [Nightly release page](https://github.com/ch32-rs/wchisp/releases/tag/nightly).
+
+For Windows users, you will need vc runtime to run the binary. You can download it from [Microsoft](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170).
+
+Or else, you can install it from source.
+
 ```console
 # install libusb for your platform
 # macOS
