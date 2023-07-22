@@ -10,27 +10,6 @@ This tool is a work in progress.
 - **NOTE**: This tool is for USB ISP, not using with WCH-Link
   - [ch32-rs/wlink](https://github.com/ch32-rs/wlink) is a command line tool for WCH-Link
 
-## TODOs
-
-- [x] chip detection, identification
-  - `wchisp probe`
-  - `wchisp info`
-- [x] flash and verify code
-  - [x] ELF parsing
-  - [x] hex, bin, ihex support
-  - [x] skip erasing, verifying, resetting
-- [x] chip config register dump
-  - `wchisp config`
-  - works for most chips, but not all. Issues and PRs are welcomed
-- [ ] write config registers
-  - [x] reset config registers to default
-  - [ ] write config with friendly register names? like `wchisp config set SRAM_CODE_MODE=1 ...`
-- [x] EEPROM dump
-- [x] EEPROM erase
-- [x] EEPROM write
-- [x] select from multiple chips(using `-d` to select device index) `wchisp -d 0 info`
-- [ ] ISP via UART or Net
-
 ## Installing
 
 The prebuilt binaries are available on the [Nightly release page](https://github.com/ch32-rs/wchisp/releases/tag/nightly).
@@ -129,6 +108,27 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
   - [CH32V203G6 FlappyBoard](https://github.com/metro94/FlappyBoard)
   - [nanoCH32V203](https://github.com/wuxx/nanoCH32V203)
 - ... (feel free to open an issue whether it works on your chip or not)
+
+## TODOs
+
+- [x] chip detection, identification
+  - `wchisp probe`
+  - `wchisp info`
+- [x] flash and verify code
+  - [x] ELF parsing
+  - [x] hex, bin, ihex support
+  - [x] skip erasing, verifying, resetting
+- [x] chip config register dump
+  - `wchisp config`
+  - works for most chips, but not all. Issues and PRs are welcomed
+- [ ] write config registers
+  - [x] reset config registers to default
+  - [ ] write config with friendly register names? like `wchisp config set SRAM_CODE_MODE=1 ...`
+- [x] EEPROM dump
+- [x] EEPROM erase
+- [x] EEPROM write
+- [x] select from multiple chips(using `-d` to select device index) `wchisp -d 0 info`
+- [ ] ISP via UART or Net
 
 ## Related Works (Many Thanks!)
 
