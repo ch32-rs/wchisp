@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refine device opening error message on Windows and Linux
 - Add CH59x support
 - Add CH32X03x support
+- Add CH643 support(not tested)
 
 ### Fixed
 

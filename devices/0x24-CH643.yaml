@@ -1,0 +1,19 @@
+---
+name: CH643 Series
+# NOTE: mcu_type is hex-encoded, not "10" in base-10
+mcu_type: 0x14
+device_type: 0x24
+support_net: false
+support_usb: true
+support_serial: true
+description: CH643 RISC-V4C RGB Display Driver Series
+variants:
+  - name: CH643
+    # 48 - CH643W
+    # 49 - CH643Q
+    # 51 - CH643L
+    # 52 - CH643U
+    chip_id: 48
+    alt_chip_ids: ["ALL"]
+    flash_size: 63488
+
