@@ -1,0 +1,31 @@
+---
+name: CH32L103 Series
+mcu_type: 0x15
+device_type: 0x25
+support_net: false
+support_usb: true
+support_serial: true
+description: CH32L103 (RISC-V4C) Series
+config_registers:
+variants:
+  - name: CH32L103C8U6
+    chip_id: 48
+    flash_size: 64K
+  - name: CH32L103C8T6
+    chip_id: 49
+    flash_size: 64K
+  - name: CH32L103F8P6
+    chip_id: 58
+    flash_size: 64K
+  - name: CH32L103G8R6
+    chip_id: 59
+    flash_size: 64K
+  - name: CH32L103K8U6
+    chip_id: 50
+    flash_size: 64K
+  - name: CH32L103F8U6
+    chip_id: 61
+    flash_size: 64K
+  - name: CH32L103F7P6
+    chip_id: 55
+    flash_size: 48K

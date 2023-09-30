@@ -155,10 +155,12 @@ impl ChipDB {
             serde_yaml::from_str(include_str!("../devices/0x17-CH32V30x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x18-CH32F20x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x19-CH32V20x.yaml"))?,
-            serde_yaml::from_str(include_str!("../devices/0x19-CH32V20x.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x20-CH32F20x-Compact.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x21-CH32V00x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x22-CH59x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x23-CH32X03x.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x24-CH643.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x25-CH32L103.yaml"))?,
         ];
         for family in &families {
             family.validate()?;

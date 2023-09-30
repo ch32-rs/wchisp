@@ -1,0 +1,15 @@
+---
+name: CH32V00x Series
+mcu_type: 0x11
+device_type: 0x21
+support_net: false
+support_usb: false
+support_serial: true
+description: CH32V00x (RISC-V2A) Series
+config_registers:
+variants:
+  - name: CH32V003*4*6
+    chip_id: 51
+    alt_chip_ids: [50, 49, 48]
+    flash_size: 16K
+
