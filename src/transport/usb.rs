@@ -60,7 +60,7 @@ impl UsbTransport {
             #[cfg(target_os = "windows")]
             Err(rusb::Error::NotSupported) => {
                 log::error!("Failed to open USB device: {:?}", device);
-                log::warn!("It's likely no WinUSB/LibUSB drivers insalled. Please install it from Zadig. See also: https://zadig.akeo.ie");
+                log::warn!("It's likely no WinUSB/LibUSB drivers installed. Please install it from Zadig. See also: https://zadig.akeo.ie");
                 anyhow::bail!("Failed to open USB device on Windows");
             }
             #[cfg(target_os = "linux")]
