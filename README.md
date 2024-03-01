@@ -53,6 +53,14 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", MODE="0666"
 # or replace MODE="0666" with GROUP="plugdev" or something else
 ```
 
+### Arch Linux
+
+Arch Linux can install [wchisp](https://aur.archlinux.org/packages/wchisp) and [wchisp-git](https://aur.archlinux.org/packages/wchisp-git) via the AUR.
+
+```bash
+yay -Syu wchisp
+```
+
 ## Usage
 
 ```console
