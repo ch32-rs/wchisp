@@ -50,7 +50,7 @@ impl UsbTransport {
             })
             .nth(nth)
             .ok_or(anyhow::format_err!(
-                "No WCH ISP USB device found(4348:55e0 device not found at index #{})",
+                "No WCH ISP USB device found(4348:55e0 or 1a86:55e0 device not found at index #{})",
                 nth
             ))?;
         log::debug!("Found USB Device {:?}", device);
