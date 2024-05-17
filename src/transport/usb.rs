@@ -25,7 +25,7 @@ impl UsbTransport {
             .filter(|device| {
                 device
                     .device_descriptor()
-                    .map(|desc| desc.vendor_id() == 0x4348 && desc.product_id() == 0x55e0)
+                    .map(|desc| (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86) && desc.product_id() == 0x55e0)
                     .unwrap_or(false)
             })
             .enumerate()
@@ -45,7 +45,7 @@ impl UsbTransport {
             .filter(|device| {
                 device
                     .device_descriptor()
-                    .map(|desc| desc.vendor_id() == 0x4348 && desc.product_id() == 0x55e0)
+                    .map(|desc| (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86) && desc.product_id() == 0x55e0)
                     .unwrap_or(false)
             })
             .nth(nth)
