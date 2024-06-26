@@ -55,7 +55,7 @@ impl UsbTransport {
             ))?;
         log::debug!("Found USB Device {:?}", device);
 
-        let mut device_handle = match device.open() {
+        let device_handle = match device.open() {
             Ok(handle) => handle,
             #[cfg(target_os = "windows")]
             Err(rusb::Error::NotSupported) => {
