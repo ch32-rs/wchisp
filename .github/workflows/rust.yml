@@ -2,12 +2,12 @@ name: Rust
 
 on:
   push:
-    branches: [ main ]
     paths:
       - "Cargo.toml"
       - "src/**"
       - "devices/**"
       - "!**.md"
+      - ".github/workflows/rust.yml"
   pull_request:
     branches: [ main ]
     paths:
@@ -15,31 +15,108 @@ on:
       - "src/**"
       - "devices/**"
       - "!**.md"
+      - ".github/workflows/rust.yml"
   workflow_dispatch:
+  release:
+    types:
+      - created
+  schedule: # Every day at the 2 P.M. (UTC) we run a scheduled nightly build
+    - cron: "0 14 * * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-    name: build (${{ matrix.config.os }})
+    name: build (${{ matrix.config.arch }})
     strategy:
       matrix:
         config:
           - os: windows-latest
+            arch: win-x64
           - os: ubuntu-latest
+            arch: linux-x64
           - os: macos-latest
+            arch: macos-arm64
+          - os: macos-12
+            arch: macos-x64
     runs-on: ${{ matrix.config.os }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build
       run: cargo build --release
     - name: Run tests
       run: cargo test
     - name: Run help
       run: cargo run -- --help
-    - uses: actions/upload-artifact@v3
+
+    - name: Prepare artifacts
+      run: |
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          WCHISP_EXE="wchisp.exe"
+        else
+          WCHISP_EXE="wchisp"
+        fi
+
+        mkdir wchisp-${{ matrix.config.arch }}
+        cp target/release/$WCHISP_EXE wchisp-${{ matrix.config.arch }}
+        cp README.md wchisp-${{ matrix.config.arch }}
+      shell: bash
+    - uses: actions/upload-artifact@v4
       with:
-        name: wchisp-${{ matrix.config.os }}
-        path: target/debug/wchisp*
+        name: wchisp-${{ matrix.config.arch }}
+        path: wchisp-${{ matrix.config.arch }}
+
+    - name: Prepare Release Asset
+      if: github.event_name == 'release'
+      run: |
+        if [[ "${{ runner.os }}" == "Windows" ]]; then
+          7z a -tzip wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.zip wchisp-${{ matrix.config.arch }}
+        else
+          zip -r wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.zip wchisp-${{ matrix.config.arch }}
+        fi
+      shell: bash
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      if: github.event_name == 'release'
+      with:
+        files: |
+          wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.zip
+
+  nightly-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./
+
+      - name: Prepare Nightly Asset
+        run: |
+          ls -R ./
+          for f in wchisp-*; do
+            echo "Compressing $f with zip -r $f.zip $f" 
+            zip -r $f.zip $f
+          done
+          ls ./
+
+      - name: Update Nightly Release
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          name: "wchisp nightly release $$"
+          draft: false
+          prerelease: true
+          body: |
+            This is a nightly binary release of the wchisp command line tool.
+          files: |
+            wchisp-*.zip
