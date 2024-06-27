@@ -78,15 +78,17 @@ jobs:
         if [[ "${{ runner.os }}" == "Windows" ]]; then
           7z a -tzip wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.zip wchisp-${{ matrix.config.arch }}
         else
-          zip -r wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.zip wchisp-${{ matrix.config.arch }}
+          tar -czvf wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.tar.gz wchisp-${{ matrix.config.arch }}
         fi
       shell: bash
     - name: Upload Release Asset
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: github.event_name == 'release'
       with:
+        fail_on_unmatched_files: false
         files: |
-          wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.zip
+          wchisp-*.tar.gz
+          wchisp-*.zip
 
   nightly-release:
     needs: build
@@ -102,8 +104,12 @@ jobs:
         run: |
           ls -R ./
           for f in wchisp-*; do
-            echo "Compressing $f with zip -r $f.zip $f" 
-            zip -r $f.zip $f
+            echo "Compressing $f"
+            if [[ $f == wchisp-win* ]]; then
+              zip -r $f.zip $f
+            else 
+              tar -czvf $f.tar.gz $f
+            fi
           done
           ls ./
 
@@ -119,4 +125,5 @@ jobs:
           body: |
             This is a nightly binary release of the wchisp command line tool.
           files: |
+            wchisp-*.tar.gz
             wchisp-*.zip
