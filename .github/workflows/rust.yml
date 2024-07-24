@@ -40,6 +40,8 @@ jobs:
             arch: win-x64
           - os: ubuntu-latest
             arch: linux-x64
+          - os: ubuntu-latest
+            arch: linux-aarch64
           - os: macos-latest
             arch: macos-arm64
           - os: macos-12
@@ -48,23 +50,41 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Configure target
+      run: |
+        if [[ "${{ matrix.config.arch }}" == "linux-aarch64" ]]; then
+          rustup target add aarch64-unknown-linux-gnu
+          sudo apt-get install gcc-aarch64-linux-gnu
+          echo TARGET="--target aarch64-unknown-linux-gnu" >> $GITHUB_ENV
+          echo RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+        else
+          echo TARGET="" >> $GITHUB_ENV
+        fi
+      shell: bash
+
     - name: Build
-      run: cargo build --release
+      run: cargo build --release ${{ env.TARGET }}
+
     - name: Run tests
-      run: cargo test
+      if: matrix.config.arch != 'linux-aarch64'
+      run: cargo test --release ${{ env.TARGET }}
+
     - name: Run help
-      run: cargo run -- --help
+      if: matrix.config.arch != 'linux-aarch64'
+      run: cargo run --release ${{ env.TARGET }} -- --help
 
     - name: Prepare artifacts
       run: |
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          WCHISP_EXE="wchisp.exe"
+        if [[ "${{ matrix.config.arch }}" == "win-x64" ]]; then
+          WCHISP_EXE="target/release/wchisp.exe"
+        elif [[ "${{ matrix.config.arch }}" == "linux-aarch64" ]]; then
+          WCHISP_EXE="target/aarch64-unknown-linux-gnu/release/wchisp"
         else
-          WCHISP_EXE="wchisp"
+          WCHISP_EXE="target/release/wchisp"
         fi
 
         mkdir wchisp-${{ matrix.config.arch }}
-        cp target/release/$WCHISP_EXE wchisp-${{ matrix.config.arch }}
+        cp $WCHISP_EXE wchisp-${{ matrix.config.arch }}
         cp README.md wchisp-${{ matrix.config.arch }}
       shell: bash
     - uses: actions/upload-artifact@v4
