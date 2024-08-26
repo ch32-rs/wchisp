@@ -8,12 +8,12 @@ use scroll::{Pread, Pwrite, LE};
 use crate::{
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
     device::{parse_number, ChipDB},
-    transport::UsbTransport,
+    transport::{SerialTransport, UsbTransport},
     Chip, Command, Transport,
 };
 
-pub struct Flashing<T: Transport> {
-    transport: T,
+pub struct Flashing {
+    transport: Box<dyn Transport>,
     pub chip: Chip,
     /// Chip unique identifier
     chip_uid: Vec<u8>,
@@ -22,8 +22,8 @@ pub struct Flashing<T: Transport> {
     code_flash_protected: bool,
 }
 
-impl Flashing<UsbTransport> {
-    pub fn get_chip(transport: &mut UsbTransport) -> Result<Chip> {
+impl Flashing {
+    pub fn get_chip(transport: &mut impl Transport) -> Result<Chip> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
 
@@ -33,7 +33,7 @@ impl Flashing<UsbTransport> {
         Ok(chip)
     }
 
-    pub fn new_from_usb_transport(mut transport: UsbTransport) -> Result<Self> {
+    pub fn new_from_transport(mut transport: impl Transport + 'static) -> Result<Self> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
         anyhow::ensure!(resp.is_ok(), "idenfity chip failed");
@@ -63,7 +63,7 @@ impl Flashing<UsbTransport> {
         let chip_uid = resp.payload()[18..].to_vec();
 
         let f = Flashing {
-            transport,
+            transport: Box::new(transport),
             chip,
             chip_uid,
             bootloader_version: btver,
@@ -73,20 +73,22 @@ impl Flashing<UsbTransport> {
         Ok(f)
     }
 
+    pub fn new_from_serial(port: &str) -> Result<Self> {
+        Self::new_from_transport(SerialTransport::open(port)?)
+    }
+
     pub fn new_from_usb() -> Result<Self> {
         let transport = UsbTransport::open_any()?;
 
-        Self::new_from_usb_transport(transport)
+        Self::new_from_transport(transport)
     }
 
     pub fn open_nth_usb_device(nth: usize) -> Result<Self> {
         let transport = UsbTransport::open_nth(nth)?;
-        let flashing = Flashing::new_from_usb_transport(transport)?;
+        let flashing = Flashing::new_from_transport(transport)?;
         Ok(flashing)
     }
-}
 
-impl<T: Transport> Flashing<T> {
     /// Reidentify chip using correct chip uid
     pub fn reidenfity(&mut self) -> Result<()> {
         let identify = Command::identify(self.chip.chip_id, self.chip.device_type);

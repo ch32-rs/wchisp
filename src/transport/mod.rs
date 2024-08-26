@@ -5,8 +5,10 @@ use anyhow::Result;
 
 use crate::protocol::{Command, Response};
 
+pub use self::serial::SerialTransport;
 pub use self::usb::UsbTransport;
 
+mod serial;
 mod usb;
 
 const DEFAULT_TRANSPORT_TIMEOUT_MS: u64 = 1000;
