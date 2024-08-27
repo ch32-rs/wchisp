@@ -30,16 +30,37 @@ struct Cli {
     #[arg(long, short = 'p')]
     port: Option<String>,
 
+    /// Select serial baudrate
+    #[arg(long, short = 'b', value_enum, default_value_t = Baudrate::Baud115200)]
+    baudrate: Baudrate,
+
     #[command(subcommand)]
     command: Option<Commands>,
 }
 
-#[derive(Clone, Debug, ValueEnum)]
+#[derive(Copy, Clone, Debug, ValueEnum)]
 enum Transports {
     /// Use the USB transport layer
     Usb,
     /// Use the Serial transport layer
     Serial,
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
+enum Baudrate {
+    Baud115200,
+    Baud1m,
+    Baud2m,
+}
+
+impl From<Baudrate> for u32 {
+    fn from(value: Baudrate) -> Self {
+        match value {
+            Baudrate::Baud115200 => 115200,
+            Baudrate::Baud1m => 1000000,
+            Baudrate::Baud2m => 2000000,
+        }
+    }
 }
 
 #[derive(Subcommand)]
@@ -179,7 +200,7 @@ fn main() -> Result<()> {
         Some(Commands::Info { chip }) => {
             let mut flashing = match cli.transport {
                 Transports::Usb => Flashing::open_nth_usb_device(device_idx)?,
-                Transports::Serial => Flashing::new_from_serial(&serial_port)?,
+                Transports::Serial => Flashing::new_from_serial(&serial_port, cli.baudrate.into())?,
             };
 
             if let Some(expected_chip_name) = chip {
@@ -190,7 +211,7 @@ fn main() -> Result<()> {
         Some(Commands::Reset {}) => {
             let mut flashing = match cli.transport {
                 Transports::Usb => Flashing::open_nth_usb_device(device_idx)?,
-                Transports::Serial => Flashing::new_from_serial(&serial_port)?,
+                Transports::Serial => Flashing::new_from_serial(&serial_port, cli.baudrate.into())?,
             };
 
             let _ = flashing.reset();
@@ -198,7 +219,7 @@ fn main() -> Result<()> {
         Some(Commands::Erase {}) => {
             let mut flashing = match cli.transport {
                 Transports::Usb => Flashing::open_nth_usb_device(device_idx)?,
-                Transports::Serial => Flashing::new_from_serial(&serial_port)?,
+                Transports::Serial => Flashing::new_from_serial(&serial_port, cli.baudrate.into())?,
             };
 
             let sectors = flashing.chip.flash_size / 1024;
@@ -213,7 +234,7 @@ fn main() -> Result<()> {
         }) => {
             let mut flashing = match cli.transport {
                 Transports::Usb => Flashing::open_nth_usb_device(device_idx)?,
-                Transports::Serial => Flashing::new_from_serial(&serial_port)?,
+                Transports::Serial => Flashing::new_from_serial(&serial_port, cli.baudrate.into())?,
             };
 
             flashing.dump_info()?;
@@ -255,7 +276,7 @@ fn main() -> Result<()> {
         Some(Commands::Verify { path }) => {
             let mut flashing = match cli.transport {
                 Transports::Usb => Flashing::open_nth_usb_device(device_idx)?,
-                Transports::Serial => Flashing::new_from_serial(&serial_port)?,
+                Transports::Serial => Flashing::new_from_serial(&serial_port, cli.baudrate.into())?,
             };
 
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
@@ -268,7 +289,7 @@ fn main() -> Result<()> {
         Some(Commands::Eeprom { command }) => {
             let mut flashing = match cli.transport {
                 Transports::Usb => Flashing::open_nth_usb_device(device_idx)?,
-                Transports::Serial => Flashing::new_from_serial(&serial_port)?,
+                Transports::Serial => Flashing::new_from_serial(&serial_port, cli.baudrate.into())?,
             };
 
             match command {
@@ -329,7 +350,7 @@ fn main() -> Result<()> {
         Some(Commands::Config { command }) => {
             let mut flashing = match cli.transport {
                 Transports::Usb => Flashing::open_nth_usb_device(device_idx)?,
-                Transports::Serial => Flashing::new_from_serial(&serial_port)?,
+                Transports::Serial => Flashing::new_from_serial(&serial_port, cli.baudrate.into())?,
             };
 
             match command {

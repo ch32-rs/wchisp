@@ -1,7 +1,7 @@
 //! Chip flashing routine
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use indicatif::ProgressBar;
 use scroll::{Pread, Pwrite, LE};
 
@@ -73,8 +73,13 @@ impl Flashing {
         Ok(f)
     }
 
-    pub fn new_from_serial(port: &str) -> Result<Self> {
-        Self::new_from_transport(SerialTransport::open(port)?)
+    pub fn new_from_serial(port: &str, baudrate: u32) -> Result<Self> {
+        let mut transport = SerialTransport::open(port)?;
+        let set_baud = Command::set_baud(baudrate);
+        let resp = transport.transfer(set_baud)?;
+        anyhow::ensure!(resp.is_ok(), "set_baud failed");
+        transport.set_baudrate(baudrate)?;
+        Self::new_from_transport(transport)
     }
 
     pub fn new_from_usb() -> Result<Self> {

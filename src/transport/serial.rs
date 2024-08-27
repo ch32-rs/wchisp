@@ -1,12 +1,12 @@
 //! Serial Transportation.
-use std::{io::Read, thread::sleep, time::Duration};
+use std::{io::Read, time::Duration};
 
 use anyhow::{Error, Ok, Result};
 use serialport::SerialPort;
 
 use super::Transport;
 
-const SERIAL_TIMEOUT_MS: u64 = 5000;
+const SERIAL_TIMEOUT_MS: u64 = 1000;
 
 pub struct SerialTransport {
     serial_port: Box<dyn SerialPort>,
@@ -37,6 +37,11 @@ impl SerialTransport {
     pub fn open_any() -> Result<Self> {
         Self::open_nth(0)
     }
+
+    pub fn set_baudrate(&mut self, baudrate: u32) -> Result<()> {
+        self.serial_port.set_baud_rate(baudrate)?;
+        Ok(())
+    }
 }
 
 impl Transport for SerialTransport {
@@ -52,20 +57,21 @@ impl Transport for SerialTransport {
         Ok(())
     }
 
-    fn recv_raw(&mut self, timeout: Duration) -> Result<Vec<u8>> {
-        self.serial_port.set_timeout(timeout)?;
+    fn recv_raw(&mut self, _timeout: Duration) -> Result<Vec<u8>> {
+        // Ignore the custom timeout
+        // self.serial_port.set_timeout(timeout)?;
 
-        // Note: Delay needed for the message to arrive on Rx
-        sleep(Duration::from_millis(50));
-
-        let mut buf = [0u8; 64 + 3]; // Note: 64 bytes + prefix & CRC
-        let nread = self.serial_port.read(&mut buf)?;
+        // Read the message header
+        let mut header_buf = [0u8; 6];
+        self.serial_port.read_exact(&mut header_buf)?;
+        // Read the amount of data given in the header + the CRC
+        let mut data_buf = vec![0u8; (header_buf[4] + 1) as usize];
+        self.serial_port.read_exact(&mut data_buf)?;
 
         // Note: We strip the prefix & CRC, could we check the CRC for errors?
         let mut buf_vec = Vec::new();
-        if let Some(data) = buf.get(2..nread - 1) {
-            buf_vec.extend_from_slice(data);
-        }
+        buf_vec.extend_from_slice(&header_buf[2..]);
+        buf_vec.extend_from_slice(&data_buf[..data_buf.len() - 1]);
         Ok(buf_vec)
     }
 }
