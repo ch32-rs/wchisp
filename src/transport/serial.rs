@@ -50,7 +50,7 @@ impl Transport for SerialTransport {
 
         v.extend_from_slice(&[0x57, 0xab]); // Append request prefix
         v.extend_from_slice(raw);
-        v.extend_from_slice(&[raw.iter().sum()]); // Append the CRC
+        v.extend_from_slice(&[raw.iter().fold(0u8, |acc, &val| acc.wrapping_add(val))]); // Append the CRC
 
         self.serial_port.write_all(&v)?;
         self.serial_port.flush()?;

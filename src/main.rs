@@ -168,7 +168,7 @@ fn main() -> Result<()> {
                 Transports::Usb => {
                     let ndevices = UsbTransport::scan_devices()?;
                     log::info!(
-                        "Found {ndevices} device{}",
+                        "Found {ndevices} USB device{}",
                         match ndevices {
                             1 => "",
                             _ => "s",
@@ -184,7 +184,7 @@ fn main() -> Result<()> {
                     let ports = SerialTransport::scan_ports()?;
                     let port_len = ports.len();
                     log::info!(
-                        "Found {port_len} port{}:",
+                        "Found {port_len} serial port{}:",
                         match port_len {
                             1 => "",
                             _ => "s",
