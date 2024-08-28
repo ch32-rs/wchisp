@@ -2,7 +2,7 @@ use std::{thread::sleep, time::Duration};
 
 use anyhow::Result;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{builder::PossibleValue, Parser, Subcommand, ValueEnum};
 use hxdmp::hexdump;
 
 use wchisp::{
@@ -46,7 +46,7 @@ enum Transports {
     Serial,
 }
 
-#[derive(Copy, Clone, Debug, ValueEnum)]
+#[derive(Copy, Clone, Debug)]
 enum Baudrate {
     Baud115200,
     Baud1m,
@@ -59,6 +59,24 @@ impl From<Baudrate> for u32 {
             Baudrate::Baud115200 => 115200,
             Baudrate::Baud1m => 1000000,
             Baudrate::Baud2m => 2000000,
+        }
+    }
+}
+
+impl ValueEnum for Baudrate {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Baudrate::Baud115200, Baudrate::Baud1m, Baudrate::Baud2m]
+    }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        match self {
+            Baudrate::Baud115200 => Some(PossibleValue::new("Baud115200").aliases(["115200"])),
+            Baudrate::Baud1m => {
+                Some(PossibleValue::new("Baud1m").aliases(["1000000", "1_000_000", "1m"]))
+            }
+            Baudrate::Baud2m => {
+                Some(PossibleValue::new("Baud2m").aliases(["2000000", "2_000_000", "2m"]))
+            }
         }
     }
 }
