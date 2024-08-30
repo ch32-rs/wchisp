@@ -23,7 +23,7 @@ struct Cli {
     debug: bool,
 
     /// Select transport layer
-    #[arg(long, short = 't', value_enum, default_value_t = Transports::Usb)]
+    #[arg(long, short = 't', ignore_case = true, value_enum, default_value_t = Transports::Usb)]
     transport: Transports,
 
     /// Select serial port
@@ -31,7 +31,7 @@ struct Cli {
     port: Option<String>,
 
     /// Select serial baudrate
-    #[arg(long, short = 'b', value_enum, default_value_t = Baudrate::Baud115200)]
+    #[arg(long, short = 'b', ignore_case = true, value_enum, default_value_t = Baudrate::Baud115200)]
     baudrate: Baudrate,
 
     #[command(subcommand)]
