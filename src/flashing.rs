@@ -77,8 +77,10 @@ impl Flashing {
         let mut transport = SerialTransport::open(port)?;
         let set_baud = Command::set_baud(baudrate);
         let resp = transport.transfer(set_baud)?;
-        anyhow::ensure!(resp.is_ok(), "set_baud failed");
-        transport.set_baudrate(baudrate)?;
+        if !resp.is_ok() {
+            log::info!("Custom baudrate not supported by the current chip. Using 115200");
+            transport.set_baudrate(baudrate)?;
+        }
         Self::new_from_transport(transport)
     }
 
