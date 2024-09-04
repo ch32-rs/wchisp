@@ -153,7 +153,7 @@ fn main() -> Result<()> {
                 for i in 0..ndevices {
                     let mut trans = UsbTransport::open_nth(i)?;
                     let chip = Flashing::get_chip(&mut trans)?;
-                    println!("Device #{i}: {chip}");
+                    log::info!("\tDevice #{i}: {chip}");
                 }
             }
             if cli.serial {

@@ -93,12 +93,6 @@ impl<'a> Flashing<'a> {
         Self::new_from_transport(transport)
     }
 
-    pub fn open_nth_usb_device(nth: usize) -> Result<Self> {
-        let transport = UsbTransport::open_nth(nth)?;
-        let flashing = Flashing::new_from_transport(transport)?;
-        Ok(flashing)
-    }
-
     /// Reidentify chip using correct chip uid
     pub fn reidenfity(&mut self) -> Result<()> {
         let identify = Command::identify(self.chip.chip_id, self.chip.device_type);
