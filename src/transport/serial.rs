@@ -1,12 +1,55 @@
 //! Serial Transportation.
-use std::{io::Read, time::Duration};
+use std::{fmt::Display, io::Read, time::Duration};
 
 use anyhow::{Error, Ok, Result};
+use clap::{builder::PossibleValue, ValueEnum};
 use serialport::SerialPort;
 
 use super::Transport;
 
 const SERIAL_TIMEOUT_MS: u64 = 1000;
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Baudrate {
+    #[default]
+    Baud115200,
+    Baud1m,
+    Baud2m,
+}
+
+impl From<Baudrate> for u32 {
+    fn from(value: Baudrate) -> Self {
+        match value {
+            Baudrate::Baud115200 => 115200,
+            Baudrate::Baud1m => 1000000,
+            Baudrate::Baud2m => 2000000,
+        }
+    }
+}
+
+impl Display for Baudrate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", u32::from(*self))
+    }
+}
+
+impl ValueEnum for Baudrate {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Baudrate::Baud115200, Baudrate::Baud1m, Baudrate::Baud2m]
+    }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        match self {
+            Baudrate::Baud115200 => Some(PossibleValue::new("Baud115200").aliases(["115200"])),
+            Baudrate::Baud1m => {
+                Some(PossibleValue::new("Baud1m").aliases(["1000000", "1_000_000", "1m"]))
+            }
+            Baudrate::Baud2m => {
+                Some(PossibleValue::new("Baud2m").aliases(["2000000", "2_000_000", "2m"]))
+            }
+        }
+    }
+}
 
 pub struct SerialTransport {
     serial_port: Box<dyn SerialPort>,
@@ -19,6 +62,7 @@ impl SerialTransport {
     }
 
     pub fn open(port: &str) -> Result<Self> {
+        log::info!("Opening serial port: \"{}\" @ 115200 baud", port);
         let port = serialport::new(port, 115200)
             .timeout(Duration::from_millis(SERIAL_TIMEOUT_MS))
             .open()?;
@@ -38,8 +82,8 @@ impl SerialTransport {
         Self::open_nth(0)
     }
 
-    pub fn set_baudrate(&mut self, baudrate: u32) -> Result<()> {
-        self.serial_port.set_baud_rate(baudrate)?;
+    pub fn set_baudrate(&mut self, baudrate: impl Into<u32>) -> Result<()> {
+        self.serial_port.set_baud_rate(baudrate.into())?;
         Ok(())
     }
 }

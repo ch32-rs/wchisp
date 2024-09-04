@@ -40,6 +40,8 @@ impl UsbTransport {
     }
 
     pub fn open_nth(nth: usize) -> Result<UsbTransport> {
+        log::info!("Opening USB device #{}", nth);
+
         let context = Context::new()?;
 
         let device = context
