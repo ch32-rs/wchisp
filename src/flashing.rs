@@ -75,11 +75,15 @@ impl Flashing {
 
     pub fn new_from_serial(port: &str, baudrate: u32) -> Result<Self> {
         let mut transport = SerialTransport::open(port)?;
-        let set_baud = Command::set_baud(baudrate);
-        let resp = transport.transfer(set_baud)?;
-        if !resp.is_ok() {
-            log::info!("Custom baudrate not supported by the current chip. Using 115200");
-            transport.set_baudrate(baudrate)?;
+        if !transport.is_default_baudrate(baudrate) {
+            let set_baud = Command::set_baud(baudrate);
+            let resp = transport.transfer(set_baud)?;
+            anyhow::ensure!(resp.is_ok(), "set_baud failed");
+            if resp.payload() == [0xfe, 0x00] {
+                log::info!("Custom baud rate not supported by the current chip");
+            } else {
+                transport.set_baudrate(baudrate)?;
+            }
         }
         Self::new_from_transport(transport)
     }

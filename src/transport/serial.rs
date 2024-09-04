@@ -7,6 +7,7 @@ use serialport::SerialPort;
 use super::Transport;
 
 const SERIAL_TIMEOUT_MS: u64 = 1000;
+const DEFAULT_BAUD_RATE: u32 = 115200;
 
 pub struct SerialTransport {
     serial_port: Box<dyn SerialPort>,
@@ -19,7 +20,8 @@ impl SerialTransport {
     }
 
     pub fn open(port: &str) -> Result<Self> {
-        let port = serialport::new(port, 115200)
+        log::debug!("Using default baud rate {}", DEFAULT_BAUD_RATE);
+        let port = serialport::new(port, DEFAULT_BAUD_RATE)
             .timeout(Duration::from_millis(SERIAL_TIMEOUT_MS))
             .open()?;
         Ok(SerialTransport { serial_port: port })
@@ -39,8 +41,13 @@ impl SerialTransport {
     }
 
     pub fn set_baudrate(&mut self, baudrate: u32) -> Result<()> {
+        log::debug!("Setting new baud rate {baudrate}");
         self.serial_port.set_baud_rate(baudrate)?;
         Ok(())
+    }
+
+    pub fn is_default_baudrate(&mut self, baudrate: u32) -> bool {
+        DEFAULT_BAUD_RATE == baudrate
     }
 }
 
