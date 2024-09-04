@@ -8,6 +8,7 @@ use serialport::SerialPort;
 use super::{Command, Transport};
 
 const SERIAL_TIMEOUT_MS: u64 = 1000;
+const DEFAULT_BAUD_RATE: Baudrate = Baudrate::Baud115200;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Baudrate {
@@ -63,7 +64,7 @@ impl SerialTransport {
 
     pub fn open(port: &str, baudrate: Baudrate) -> Result<Self> {
         log::info!("Opening serial port: \"{}\" @ 115200 baud", port);
-        let port = serialport::new(port, 115200)
+        let port = serialport::new(port, DEFAULT_BAUD_RATE.into())
             .timeout(Duration::from_millis(SERIAL_TIMEOUT_MS)).open()?;
         
         let mut transport = SerialTransport { serial_port: port };

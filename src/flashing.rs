@@ -72,7 +72,7 @@ impl<'a> Flashing<'a> {
         f.check_chip_uid()?;
         Ok(f)
     }
-
+  
     pub fn new_from_serial(port: Option<&str>, baudrate: Option<Baudrate>) -> Result<Self> {
         let baudrate = baudrate.unwrap_or_default();
 
