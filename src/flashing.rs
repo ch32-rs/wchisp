@@ -74,25 +74,12 @@ impl<'a> Flashing<'a> {
     }
 
     pub fn new_from_serial(port: Option<&str>, baudrate: Option<Baudrate>) -> Result<Self> {
-        let mut transport = match port {
-            Some(port) => SerialTransport::open(port)?,
-            None => SerialTransport::open_any()?,
-        };
         let baudrate = baudrate.unwrap_or_default();
-        
-        // Serial port defaults to a baudrate of 115200
-        if baudrate != Baudrate::Baud115200 {
-            let set_baud = Command::set_baud(baudrate.into());
-            let resp = transport.transfer(set_baud)?;
-            anyhow::ensure!(resp.is_ok(), "set baudrate failed");
 
-            if let Some(0xfe) = resp.payload().first() {
-                log::info!("Custom baudrate not supported by the current chip. Using 115200");
-            } else {
-                log::info!("Switching baudrate to: {baudrate} baud");
-                transport.set_baudrate(baudrate)?;
-            }
-        }
+        let transport = match port {
+            Some(port) => SerialTransport::open(port, baudrate)?,
+            None => SerialTransport::open_any(baudrate)?,
+        };
 
         Self::new_from_transport(transport)
     }
