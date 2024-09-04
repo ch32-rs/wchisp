@@ -1,13 +1,56 @@
 //! Serial Transportation.
-use std::{io::Read, time::Duration};
+use std::{fmt::Display, io::Read, time::Duration};
 
 use anyhow::{Error, Ok, Result};
+use clap::{builder::PossibleValue, ValueEnum};
 use serialport::SerialPort;
 
-use super::Transport;
+use super::{Command, Transport};
 
 const SERIAL_TIMEOUT_MS: u64 = 1000;
-const DEFAULT_BAUD_RATE: u32 = 115200;
+const DEFAULT_BAUD_RATE: Baudrate = Baudrate::Baud115200;
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Baudrate {
+    #[default]
+    Baud115200,
+    Baud1m,
+    Baud2m,
+}
+
+impl From<Baudrate> for u32 {
+    fn from(value: Baudrate) -> Self {
+        match value {
+            Baudrate::Baud115200 => 115200,
+            Baudrate::Baud1m => 1000000,
+            Baudrate::Baud2m => 2000000,
+        }
+    }
+}
+
+impl Display for Baudrate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", u32::from(*self))
+    }
+}
+
+impl ValueEnum for Baudrate {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Baudrate::Baud115200, Baudrate::Baud1m, Baudrate::Baud2m]
+    }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        match self {
+            Baudrate::Baud115200 => Some(PossibleValue::new("Baud115200").aliases(["115200"])),
+            Baudrate::Baud1m => {
+                Some(PossibleValue::new("Baud1m").aliases(["1000000", "1_000_000", "1m"]))
+            }
+            Baudrate::Baud2m => {
+                Some(PossibleValue::new("Baud2m").aliases(["2000000", "2_000_000", "2m"]))
+            }
+        }
+    }
+}
 
 pub struct SerialTransport {
     serial_port: Box<dyn SerialPort>,
@@ -19,35 +62,46 @@ impl SerialTransport {
         Ok(ports.into_iter().map(|p| p.port_name).collect())
     }
 
-    pub fn open(port: &str) -> Result<Self> {
-        log::debug!("Using default baud rate {}", DEFAULT_BAUD_RATE);
-        let port = serialport::new(port, DEFAULT_BAUD_RATE)
-            .timeout(Duration::from_millis(SERIAL_TIMEOUT_MS))
-            .open()?;
-        Ok(SerialTransport { serial_port: port })
+    pub fn open(port: &str, baudrate: Baudrate) -> Result<Self> {
+        log::info!("Opening serial port: \"{}\" @ 115200 baud", port);
+        let port = serialport::new(port, DEFAULT_BAUD_RATE.into())
+            .timeout(Duration::from_millis(SERIAL_TIMEOUT_MS)).open()?;
+        
+        let mut transport = SerialTransport { serial_port: port };
+        transport.set_baudrate(baudrate)?;
+
+        Ok(transport)
     }
 
-    pub fn open_nth(nth: usize) -> Result<Self> {
+    pub fn open_nth(nth: usize, baudrate: Baudrate) -> Result<Self> {
         let ports = serialport::available_ports()?;
 
         match ports.get(nth) {
-            Some(port) => Self::open(&port.port_name),
+            Some(port) => Self::open(&port.port_name, baudrate),
             None => Err(Error::msg("No serial ports found!")),
         }
     }
 
-    pub fn open_any() -> Result<Self> {
-        Self::open_nth(0)
+    pub fn open_any(baudrate: Baudrate) -> Result<Self> {
+        Self::open_nth(0, baudrate)
     }
 
-    pub fn set_baudrate(&mut self, baudrate: u32) -> Result<()> {
-        log::debug!("Setting new baud rate {baudrate}");
-        self.serial_port.set_baud_rate(baudrate)?;
+    pub fn set_baudrate(&mut self, baudrate: impl Into<u32>) -> Result<()> {
+        let baudrate: u32 = baudrate.into();
+
+        if baudrate != self.serial_port.baud_rate()? {
+            let resp: crate::Response = self.transfer(Command::set_baud(baudrate))?;
+            anyhow::ensure!(resp.is_ok(), "set baudrate failed");
+
+            if let Some(0xfe) = resp.payload().first() {
+                log::info!("Custom baudrate not supported by the current chip. Using 115200");
+            } else {
+                log::info!("Switching baudrate to: {baudrate} baud");
+                self.serial_port.set_baud_rate(baudrate.into())?;
+            }
+        }
+
         Ok(())
-    }
-
-    pub fn is_default_baudrate(&mut self, baudrate: u32) -> bool {
-        DEFAULT_BAUD_RATE == baudrate
     }
 }
 
@@ -80,5 +134,11 @@ impl Transport for SerialTransport {
         buf_vec.extend_from_slice(&header_buf[2..]);
         buf_vec.extend_from_slice(&data_buf[..data_buf.len() - 1]);
         Ok(buf_vec)
+    }
+}
+
+impl Drop for SerialTransport {
+    fn drop(&mut self) {
+        let _ = self.set_baudrate(Baudrate::Baud115200);
     }
 }

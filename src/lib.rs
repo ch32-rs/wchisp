@@ -10,4 +10,4 @@ pub mod transport;
 pub use self::device::Chip;
 pub use self::flashing::Flashing;
 pub use self::protocol::{Command, Response};
-pub use self::transport::Transport;
+pub use self::transport::{Baudrate, Transport};

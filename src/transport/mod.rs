@@ -5,7 +5,7 @@ use anyhow::Result;
 
 use crate::protocol::{Command, Response};
 
-pub use self::serial::SerialTransport;
+pub use self::serial::{Baudrate, SerialTransport};
 pub use self::usb::UsbTransport;
 
 mod serial;

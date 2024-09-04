@@ -9,11 +9,11 @@ use crate::{
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
     device::{parse_number, ChipDB},
     transport::{SerialTransport, UsbTransport},
-    Chip, Command, Transport,
+    Chip, Command, Transport, Baudrate
 };
 
-pub struct Flashing {
-    transport: Box<dyn Transport>,
+pub struct Flashing<'a> {
+    transport: Box<dyn Transport + 'a>,
     pub chip: Chip,
     /// Chip unique identifier
     chip_uid: Vec<u8>,
@@ -22,7 +22,7 @@ pub struct Flashing {
     code_flash_protected: bool,
 }
 
-impl Flashing {
+impl<'a> Flashing<'a> {
     pub fn get_chip(transport: &mut impl Transport) -> Result<Chip> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
@@ -33,7 +33,7 @@ impl Flashing {
         Ok(chip)
     }
 
-    pub fn new_from_transport(mut transport: impl Transport + 'static) -> Result<Self> {
+    pub fn new_from_transport(mut transport: impl Transport + 'a) -> Result<Self> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
         anyhow::ensure!(resp.is_ok(), "idenfity chip failed");
@@ -72,32 +72,25 @@ impl Flashing {
         f.check_chip_uid()?;
         Ok(f)
     }
+  
+    pub fn new_from_serial(port: Option<&str>, baudrate: Option<Baudrate>) -> Result<Self> {
+        let baudrate = baudrate.unwrap_or_default();
 
-    pub fn new_from_serial(port: &str, baudrate: u32) -> Result<Self> {
-        let mut transport = SerialTransport::open(port)?;
-        if !transport.is_default_baudrate(baudrate) {
-            let set_baud = Command::set_baud(baudrate);
-            let resp = transport.transfer(set_baud)?;
-            anyhow::ensure!(resp.is_ok(), "set_baud failed");
-            if resp.payload() == [0xfe, 0x00] {
-                log::info!("Custom baud rate not supported by the current chip");
-            } else {
-                transport.set_baudrate(baudrate)?;
-            }
-        }
-        Self::new_from_transport(transport)
-    }
-
-    pub fn new_from_usb() -> Result<Self> {
-        let transport = UsbTransport::open_any()?;
+        let transport = match port {
+            Some(port) => SerialTransport::open(port, baudrate)?,
+            None => SerialTransport::open_any(baudrate)?,
+        };
 
         Self::new_from_transport(transport)
     }
 
-    pub fn open_nth_usb_device(nth: usize) -> Result<Self> {
-        let transport = UsbTransport::open_nth(nth)?;
-        let flashing = Flashing::new_from_transport(transport)?;
-        Ok(flashing)
+    pub fn new_from_usb(device: Option<usize>) -> Result<Self> {
+        let transport = match device {
+            Some(device) => UsbTransport::open_nth(device)?,
+            None => UsbTransport::open_any()?,
+        };
+
+        Self::new_from_transport(transport)
     }
 
     /// Reidentify chip using correct chip uid
