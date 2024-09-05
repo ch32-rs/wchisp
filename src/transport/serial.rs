@@ -4,6 +4,7 @@ use std::{fmt::Display, io::Read, time::Duration};
 use anyhow::{Error, Ok, Result};
 use clap::{builder::PossibleValue, ValueEnum};
 use serialport::SerialPort;
+use scroll::Pread;
 
 use super::{Command, Transport};
 
@@ -122,18 +123,43 @@ impl Transport for SerialTransport {
         // Ignore the custom timeout
         // self.serial_port.set_timeout(timeout)?;
 
-        // Read the message header
-        let mut header_buf = [0u8; 6];
-        self.serial_port.read_exact(&mut header_buf)?;
-        // Read the amount of data given in the header + the CRC
-        let mut data_buf = vec![0u8; (header_buf[4] + 1) as usize];
-        self.serial_port.read_exact(&mut data_buf)?;
+        // Read the message header and validate.
+        let mut head_buf = [0u8; 2];
+        self.serial_port.read_exact(&mut head_buf)?;
+        anyhow::ensure!(
+            head_buf == [0x55, 0xaa],
+            "response has invalid header ({:02x}{:02x})",
+            head_buf[0], head_buf[1]
+        );
 
-        // Note: We strip the prefix & CRC, could we check the CRC for errors?
-        let mut buf_vec = Vec::new();
-        buf_vec.extend_from_slice(&header_buf[2..]);
-        buf_vec.extend_from_slice(&data_buf[..data_buf.len() - 1]);
-        Ok(buf_vec)
+        // Read the payload header and extract given length value.
+        let mut payload_head_buf = [0u8; 4];
+        self.serial_port.read_exact(&mut payload_head_buf)?;
+        let payload_data_len = payload_head_buf.pread_with::<u16>(2, scroll::LE)? as usize;
+        anyhow::ensure!(payload_data_len > 0, "response data length is zero");
+
+        // Read the amount of payload data given in the header.
+        let mut payload_data_buf = vec![0u8; payload_data_len];
+        self.serial_port.read_exact(&mut payload_data_buf)?;
+
+        // Read the checksum and verify against actual sum calculated from
+        // entire payload (header + data).
+        let mut cksum_buf = [0u8; 1];
+        self.serial_port.read_exact(&mut cksum_buf)?;
+        let mut checksum = 0u8;
+        checksum = payload_head_buf.iter().fold(checksum, |acc, &val| acc.wrapping_add(val));
+        checksum = payload_data_buf.iter().fold(checksum, |acc, &val| acc.wrapping_add(val));
+        anyhow::ensure!(
+            checksum == cksum_buf[0],
+            "response has incorrect checksum ({:02x} != {:02x})",
+            cksum_buf[0], checksum
+        );
+
+        // Stuff the payload header and data into response to be returned.
+        let mut resp_vec = Vec::with_capacity(payload_head_buf.len() + payload_data_buf.len());
+        resp_vec.extend_from_slice(&payload_head_buf);
+        resp_vec.extend_from_slice(&payload_data_buf);
+        Ok(resp_vec)
     }
 }
 
