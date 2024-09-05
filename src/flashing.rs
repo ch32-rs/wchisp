@@ -9,7 +9,7 @@ use crate::{
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
     device::{parse_number, ChipDB},
     transport::{SerialTransport, UsbTransport},
-    Chip, Command, Transport, Baudrate
+    Baudrate, Chip, Command, Transport,
 };
 
 pub struct Flashing<'a> {
@@ -72,7 +72,7 @@ impl<'a> Flashing<'a> {
         f.check_chip_uid()?;
         Ok(f)
     }
-  
+
     pub fn new_from_serial(port: Option<&str>, baudrate: Option<Baudrate>) -> Result<Self> {
         let baudrate = baudrate.unwrap_or_default();
 

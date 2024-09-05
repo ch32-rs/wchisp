@@ -8,7 +8,7 @@ use hxdmp::hexdump;
 use wchisp::{
     constants::SECTOR_SIZE,
     transport::{SerialTransport, UsbTransport},
-    Flashing, Baudrate
+    Baudrate, Flashing,
 };
 
 #[derive(Parser)]

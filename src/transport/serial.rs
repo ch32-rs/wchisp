@@ -3,13 +3,12 @@ use std::{fmt::Display, io::Read, time::Duration};
 
 use anyhow::{Error, Ok, Result};
 use clap::{builder::PossibleValue, ValueEnum};
-use serialport::SerialPort;
 use scroll::Pread;
+use serialport::SerialPort;
 
 use super::{Command, Transport};
 
 const SERIAL_TIMEOUT_MS: u64 = 1000;
-const DEFAULT_BAUD_RATE: Baudrate = Baudrate::Baud115200;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Baudrate {
@@ -65,9 +64,10 @@ impl SerialTransport {
 
     pub fn open(port: &str, baudrate: Baudrate) -> Result<Self> {
         log::info!("Opening serial port: \"{}\" @ 115200 baud", port);
-        let port = serialport::new(port, DEFAULT_BAUD_RATE.into())
-            .timeout(Duration::from_millis(SERIAL_TIMEOUT_MS)).open()?;
-        
+        let port = serialport::new(port, Baudrate::default().into())
+            .timeout(Duration::from_millis(SERIAL_TIMEOUT_MS))
+            .open()?;
+
         let mut transport = SerialTransport { serial_port: port };
         transport.set_baudrate(baudrate)?;
 
@@ -123,20 +123,19 @@ impl Transport for SerialTransport {
         // Ignore the custom timeout
         // self.serial_port.set_timeout(timeout)?;
 
-        // Read the message header and validate.
+        // Read the serial header and validate.
         let mut head_buf = [0u8; 2];
         self.serial_port.read_exact(&mut head_buf)?;
         anyhow::ensure!(
             head_buf == [0x55, 0xaa],
-            "response has invalid header ({:02x}{:02x})",
-            head_buf[0], head_buf[1]
+            "Response has invalid serial header {head_buf:02x?}",
         );
 
         // Read the payload header and extract given length value.
         let mut payload_head_buf = [0u8; 4];
         self.serial_port.read_exact(&mut payload_head_buf)?;
         let payload_data_len = payload_head_buf.pread_with::<u16>(2, scroll::LE)? as usize;
-        anyhow::ensure!(payload_data_len > 0, "response data length is zero");
+        anyhow::ensure!(payload_data_len > 0, "Response data length is zero");
 
         // Read the amount of payload data given in the header.
         let mut payload_data_buf = vec![0u8; payload_data_len];
@@ -146,19 +145,23 @@ impl Transport for SerialTransport {
         // entire payload (header + data).
         let mut cksum_buf = [0u8; 1];
         self.serial_port.read_exact(&mut cksum_buf)?;
-        let mut checksum = 0u8;
-        checksum = payload_head_buf.iter().fold(checksum, |acc, &val| acc.wrapping_add(val));
-        checksum = payload_data_buf.iter().fold(checksum, |acc, &val| acc.wrapping_add(val));
-        anyhow::ensure!(
-            checksum == cksum_buf[0],
-            "response has incorrect checksum ({:02x} != {:02x})",
-            cksum_buf[0], checksum
-        );
 
         // Stuff the payload header and data into response to be returned.
-        let mut resp_vec = Vec::with_capacity(payload_head_buf.len() + payload_data_buf.len());
-        resp_vec.extend_from_slice(&payload_head_buf);
-        resp_vec.extend_from_slice(&payload_data_buf);
+        let resp_vec: Vec<u8> = payload_head_buf
+            .into_iter()
+            .chain(payload_data_buf.into_iter())
+            .collect();
+
+        // Read the checksum and verify against actual sum calculated from
+        // entire payload (header + data).
+        let checksum = resp_vec.iter().fold(0u8, |acc, &val| acc.wrapping_add(val));
+        anyhow::ensure!(
+            checksum == cksum_buf[0],
+            "Response has incorrect checksum ({:02x} != {:02x})",
+            cksum_buf[0],
+            checksum
+        );
+
         Ok(resp_vec)
     }
 }
