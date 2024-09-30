@@ -107,6 +107,7 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
 - [x] CH582
   - CH58xM-EVT
   - [FOSSASIA Badgemagic CH582M](https://badgemagic.fossasia.org/)
+  - [WeAct Studio CH582F](https://github.com/WeActStudio/WeActStudio.WCH-BLE-Core/blob/master/Images/1.png)
 - [x] CH573
   - [WeActStudio.WCH-BLE-Core](https://github.com/WeActStudio/WeActStudio.WCH-BLE-Core)
 - [x] CH592
