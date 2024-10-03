@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2023-10-03
+
 ### Added
 
 - Refine device opening error message on Windows and Linux
@@ -14,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add CH32X03x support
 - Add CH643 support(not tested)
 - Add prebuilt binaries for Windows, Linux and macOS in the nightly release page
+- Serieal transport support (#56)
 
 ### Fixed
 
