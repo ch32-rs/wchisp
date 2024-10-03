@@ -7,9 +7,75 @@ support_usb: false
 support_serial: true
 description: CH32V00x (RISC-V2A) Series
 config_registers:
+  # Ref: section "16.5 User Option Bytes" of RM manual
+  - offset: 0x00
+    name: RDPR_USER
+    description: RDPR, nRDPR, USER, nUSER
+    reset: 0x08F75AA5
+    type: u32
+    fields:
+      - bit_range: [7, 0]
+        name: RDPR
+        description: Read Protection. 0xA5 for unprotected, otherwise read-protected (ignoring WRP)
+        explaination:
+          0xa5: Unprotected
+          _: Protected
+      - bit_range: [16, 16]
+        name: IWDG_SW
+        description: Independent watchdog (IWDG) hardware enable
+        explaination:
+          1: IWDG enabled by software, and not enabled by hardware
+          0: IWDG enabled by hardware (along with the LSI clock)
+      - bit_range: [18, 18]
+        name: STANDBY_RST
+        description: System reset control under the standby mode
+        explaination:
+          1: Disabled, entering standby-mode without RST
+          0: Enabled
+      - bit_range: [20, 19]
+        name: RST_MODE
+        description: External pin PD7 reset mode
+        explaination:
+          0b00: Ignoring pin states within 128us after turning on the multiplexing function
+          0b01: Ignoring pin states within 1ms after turning on the multiplexing function
+          0b10: Ignoring pin states within 12ms after turning on the multiplexing function
+          0b11: Multiplexing function off, PD7 for I/O function
+      - bit_range: [21, 21]
+        name: START_MODE
+        description: Power-on startup mode
+        explaination:
+          1: Start from BOOT area
+          0: Start from user CODE area
+  - offset: 0x04
+    name: DATA
+    description: Customizable 2 byte data, DATA0, nDATA0, DATA1, nDATA1
+    reset: 0xFF00FF00
+    type: u32
+    fields:
+      - bit_range: [7, 0]
+        name: DATA0
+      - bit_range: [23, 16]
+        name: DATA1
+  - offset: 0x08
+    name: WRPR
+    # Each bit is used to control the write-protect status of 1 sector (1K bytes/sector)
+    description: Flash memory write protection status
+    type: u32
+    reset: 0xFFFFFFFF
+    explaination:
+      0xFFFFFFFF: Unprotected
+      _: Some 1K sections are protected
 variants:
-  - name: CH32V003*4*6
-    chip_id: 51
-    alt_chip_ids: [50, 49, 48]
+  - name: CH32V003F4P6
+    chip_id: 0x30
     flash_size: 16K
-
+  - name: CH32V003F4U6
+    chip_id: 0x31
+    flash_size: 16K
+  - name: CH32V003A4M6
+    chip_id: 0x32
+    flash_size: 16K
+  - name: CH32V003J4M6
+    chip_id: 0x33
+    flash_size: 16K
+  # TODO: add CH32V002, 004 & 006 - chip IDs unknown at present

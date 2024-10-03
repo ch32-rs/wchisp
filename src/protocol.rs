@@ -137,6 +137,10 @@ impl Command {
         Command::DataErase { sectors }
     }
 
+    pub fn set_baud(baudrate: u32) -> Self {
+        Command::SetBaud { baudrate }
+    }
+
     // TODO(visiblity)
     pub fn into_raw(self) -> Result<Vec<u8>> {
         match self {
@@ -257,7 +261,20 @@ impl Command {
                 buf[7] = sectors as u8;
                 Ok(buf.to_vec())
             }
-            // TODO: WriteOTP, ReadOTP, SetBaud
+            Command::SetBaud { baudrate } => {
+                let baudrate = baudrate.to_le_bytes();
+                let buf = vec![
+                    commands::SET_BAUD,
+                    0x04,
+                    0x00,
+                    baudrate[0],
+                    baudrate[1],
+                    baudrate[2],
+                    baudrate[3],
+                ];
+                Ok(buf)
+            }
+            // TODO: WriteOTP, ReadOTP
             _ => unimplemented!(),
         }
     }

@@ -25,7 +25,10 @@ impl UsbTransport {
             .filter(|device| {
                 device
                     .device_descriptor()
-                    .map(|desc| (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86) && desc.product_id() == 0x55e0)
+                    .map(|desc| {
+                        (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
+                            && desc.product_id() == 0x55e0
+                    })
                     .unwrap_or(false)
             })
             .enumerate()
@@ -37,6 +40,8 @@ impl UsbTransport {
     }
 
     pub fn open_nth(nth: usize) -> Result<UsbTransport> {
+        log::info!("Opening USB device #{}", nth);
+
         let context = Context::new()?;
 
         let device = context
@@ -45,7 +50,10 @@ impl UsbTransport {
             .filter(|device| {
                 device
                     .device_descriptor()
-                    .map(|desc| (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86) && desc.product_id() == 0x55e0)
+                    .map(|desc| {
+                        (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
+                            && desc.product_id() == 0x55e0
+                    })
                     .unwrap_or(false)
             })
             .nth(nth)

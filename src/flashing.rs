@@ -1,19 +1,19 @@
 //! Chip flashing routine
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use indicatif::ProgressBar;
 use scroll::{Pread, Pwrite, LE};
 
 use crate::{
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
     device::{parse_number, ChipDB},
-    transport::UsbTransport,
-    Chip, Command, Transport,
+    transport::{SerialTransport, UsbTransport},
+    Baudrate, Chip, Command, Transport,
 };
 
-pub struct Flashing<T: Transport> {
-    transport: T,
+pub struct Flashing<'a> {
+    transport: Box<dyn Transport + 'a>,
     pub chip: Chip,
     /// Chip unique identifier
     chip_uid: Vec<u8>,
@@ -22,8 +22,8 @@ pub struct Flashing<T: Transport> {
     code_flash_protected: bool,
 }
 
-impl Flashing<UsbTransport> {
-    pub fn get_chip(transport: &mut UsbTransport) -> Result<Chip> {
+impl<'a> Flashing<'a> {
+    pub fn get_chip(transport: &mut impl Transport) -> Result<Chip> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
 
@@ -33,7 +33,7 @@ impl Flashing<UsbTransport> {
         Ok(chip)
     }
 
-    pub fn new_from_usb_transport(mut transport: UsbTransport) -> Result<Self> {
+    pub fn new_from_transport(mut transport: impl Transport + 'a) -> Result<Self> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
         anyhow::ensure!(resp.is_ok(), "idenfity chip failed");
@@ -63,7 +63,7 @@ impl Flashing<UsbTransport> {
         let chip_uid = resp.payload()[18..].to_vec();
 
         let f = Flashing {
-            transport,
+            transport: Box::new(transport),
             chip,
             chip_uid,
             bootloader_version: btver,
@@ -73,20 +73,26 @@ impl Flashing<UsbTransport> {
         Ok(f)
     }
 
-    pub fn new_from_usb() -> Result<Self> {
-        let transport = UsbTransport::open_any()?;
+    pub fn new_from_serial(port: Option<&str>, baudrate: Option<Baudrate>) -> Result<Self> {
+        let baudrate = baudrate.unwrap_or_default();
 
-        Self::new_from_usb_transport(transport)
+        let transport = match port {
+            Some(port) => SerialTransport::open(port, baudrate)?,
+            None => SerialTransport::open_any(baudrate)?,
+        };
+
+        Self::new_from_transport(transport)
     }
 
-    pub fn open_nth_usb_device(nth: usize) -> Result<Self> {
-        let transport = UsbTransport::open_nth(nth)?;
-        let flashing = Flashing::new_from_usb_transport(transport)?;
-        Ok(flashing)
-    }
-}
+    pub fn new_from_usb(device: Option<usize>) -> Result<Self> {
+        let transport = match device {
+            Some(device) => UsbTransport::open_nth(device)?,
+            None => UsbTransport::open_any()?,
+        };
 
-impl<T: Transport> Flashing<T> {
+        Self::new_from_transport(transport)
+    }
+
     /// Reidentify chip using correct chip uid
     pub fn reidenfity(&mut self) -> Result<()> {
         let identify = Command::identify(self.chip.chip_id, self.chip.device_type);

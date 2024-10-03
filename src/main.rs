@@ -5,18 +5,39 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use hxdmp::hexdump;
 
-use wchisp::{constants::SECTOR_SIZE, transport::UsbTransport, Flashing};
+use wchisp::{
+    constants::SECTOR_SIZE,
+    transport::{SerialTransport, UsbTransport},
+    Baudrate, Flashing,
+};
 
-#[derive(clap::Parser)]
+#[derive(Parser)]
 #[command(author, version, about, long_about = None)]
+#[clap(group(clap::ArgGroup::new("transport").args(&["usb", "serial"])))]
 struct Cli {
-    /// Optional device index to operate on
-    #[arg(long, short = 'd', value_name = "INDEX")]
-    device: Option<usize>,
-
     /// Turn debugging information on
     #[arg(long = "verbose", short = 'v')]
     debug: bool,
+
+    /// Use the USB transport layer
+    #[arg(long, short, default_value_t = true, default_value_if("serial", clap::builder::ArgPredicate::IsPresent, "false"), conflicts_with_all = ["serial", "port", "baudrate"])]
+    usb: bool,
+
+    /// Use the Serial transport layer
+    #[arg(long, short, conflicts_with_all = ["usb", "device"])]
+    serial: bool,
+
+    /// Optional USB device index to operate on
+    #[arg(long, short, value_name = "INDEX", default_value = None, requires = "usb")]
+    device: Option<usize>,
+
+    /// Select the serial port
+    #[arg(long, short, requires = "serial")]
+    port: Option<String>,
+
+    /// Select the serial baudrate
+    #[arg(long, short, ignore_case = true, value_enum, requires = "serial")]
+    baudrate: Option<Baudrate>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -118,32 +139,55 @@ fn main() -> Result<()> {
         );
     }
 
-    let device_idx = cli.device.unwrap_or_default();
-
-    match cli.command {
+    match &cli.command {
         None | Some(Commands::Probe {}) => {
-            let ndevices = UsbTransport::scan_devices()?;
-            log::info!("Found {} devices", ndevices);
-            log::info!("hint: use `wchisp info` to check chip info");
-            for i in 0..ndevices {
-                let mut trans = UsbTransport::open_nth(i)?;
-                let chip = Flashing::get_chip(&mut trans)?;
-                println!("Device #{}: {}", i, chip);
+            if cli.usb {
+                let ndevices = UsbTransport::scan_devices()?;
+                log::info!(
+                    "Found {ndevices} USB device{}",
+                    match ndevices {
+                        1 => "",
+                        _ => "s",
+                    }
+                );
+                for i in 0..ndevices {
+                    let mut trans = UsbTransport::open_nth(i)?;
+                    let chip = Flashing::get_chip(&mut trans)?;
+                    log::info!("\tDevice #{i}: {chip}");
+                }
             }
+            if cli.serial {
+                let ports = SerialTransport::scan_ports()?;
+                let port_len = ports.len();
+                log::info!(
+                    "Found {port_len} serial port{}:",
+                    match port_len {
+                        1 => "",
+                        _ => "s",
+                    }
+                );
+                for p in ports {
+                    log::info!("\t{p}");
+                }
+            }
+
+            log::info!("hint: use `wchisp info` to check chip info");
         }
         Some(Commands::Info { chip }) => {
-            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut flashing = get_flashing(&cli)?;
+
             if let Some(expected_chip_name) = chip {
                 flashing.check_chip_name(&expected_chip_name)?;
             }
             flashing.dump_info()?;
         }
         Some(Commands::Reset {}) => {
-            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut flashing = get_flashing(&cli)?;
+
             let _ = flashing.reset();
         }
         Some(Commands::Erase {}) => {
-            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut flashing = get_flashing(&cli)?;
 
             let sectors = flashing.chip.flash_size / 1024;
             flashing.erase_code(sectors)?;
@@ -155,7 +199,7 @@ fn main() -> Result<()> {
             no_verify,
             no_reset,
         }) => {
-            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut flashing = get_flashing(&cli)?;
 
             flashing.dump_info()?;
 
@@ -163,7 +207,7 @@ fn main() -> Result<()> {
             extend_firmware_to_sector_boundary(&mut binary);
             log::info!("Firmware size: {}", binary.len());
 
-            if no_erase {
+            if *no_erase {
                 log::warn!("Skipping erase");
             } else {
                 log::info!("Erasing...");
@@ -178,7 +222,7 @@ fn main() -> Result<()> {
             flashing.flash(&binary)?;
             sleep(Duration::from_millis(500));
 
-            if no_verify {
+            if *no_verify {
                 log::warn!("Skipping verify");
             } else {
                 log::info!("Verifying...");
@@ -186,7 +230,7 @@ fn main() -> Result<()> {
                 log::info!("Verify OK");
             }
 
-            if no_reset {
+            if *no_reset {
                 log::warn!("Skipping reset");
             } else {
                 log::info!("Now reset device and skip any communication errors");
@@ -194,7 +238,8 @@ fn main() -> Result<()> {
             }
         }
         Some(Commands::Verify { path }) => {
-            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut flashing = get_flashing(&cli)?;
+
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
             extend_firmware_to_sector_boundary(&mut binary);
             log::info!("Firmware size: {}", binary.len());
@@ -203,7 +248,8 @@ fn main() -> Result<()> {
             log::info!("Verify OK");
         }
         Some(Commands::Eeprom { command }) => {
-            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut flashing = get_flashing(&cli)?;
+
             match command {
                 None | Some(EepromCommands::Dump { .. }) => {
                     flashing.reidenfity()?;
@@ -235,7 +281,7 @@ fn main() -> Result<()> {
                 Some(EepromCommands::Write { path, no_erase }) => {
                     flashing.reidenfity()?;
 
-                    if no_erase {
+                    if *no_erase {
                         log::warn!("Skipping erase");
                     } else {
                         log::info!("Erasing EEPROM(Data Flash)...");
@@ -260,7 +306,8 @@ fn main() -> Result<()> {
             }
         }
         Some(Commands::Config { command }) => {
-            let mut flashing = Flashing::open_nth_usb_device(device_idx)?;
+            let mut flashing = get_flashing(&cli)?;
+
             match command {
                 None | Some(ConfigCommands::Info {}) => {
                     flashing.dump_config()?;
@@ -290,5 +337,15 @@ fn extend_firmware_to_sector_boundary(buf: &mut Vec<u8>) {
     if buf.len() % 1024 != 0 {
         let remain = 1024 - (buf.len() % 1024);
         buf.extend_from_slice(&vec![0; remain]);
+    }
+}
+
+fn get_flashing(cli: &Cli) -> Result<Flashing<'_>> {
+    if cli.usb {
+        Flashing::new_from_usb(cli.device)
+    } else if cli.serial {
+        Flashing::new_from_serial(cli.port.as_deref(), cli.baudrate)
+    } else {
+        unreachable!("No transport specified");
     }
 }
