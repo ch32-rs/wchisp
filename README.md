@@ -102,6 +102,8 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
   - RCT6 #8
 - [x] CH32V103
 - [x] CH32F103
+- [x] CH549
+  - [VeriMake CH549DB CH549F](https://gitee.com/verimaker/vm-wch-51-evb-ch549evb/blob/master/doc/Schematic_VeriMake_CH549DB_v1_0_0_20220123.pdf)
 - [x] CH552
   - Works but might be buggy #10 #14
 - [x] CH582
