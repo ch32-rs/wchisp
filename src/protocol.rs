@@ -209,7 +209,7 @@ impl Command {
             Command::WriteConfig { bit_mask, data } => {
                 let mut buf = vec![0u8; 1 + 2 + 2 + data.len()];
                 buf[0] = commands::WRITE_CONFIG;
-                buf.pwrite_with(1 + data.len() as u16, 1, scroll::LE)?;
+                buf.pwrite_with(2 + data.len() as u16, 1, scroll::LE)?;
                 buf[3] = bit_mask;
                 buf[5..].copy_from_slice(&data);
                 Ok(buf)
