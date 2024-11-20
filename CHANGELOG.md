@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add CH32X033 support
+- Add CH585 support
+- New `enable-debug` subcommand, also added to chip metadata
+
 ## [0.2.2] - 2023-10-03
 
 ### Added
