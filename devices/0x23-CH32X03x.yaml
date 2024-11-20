@@ -71,21 +71,23 @@ config_registers:
 variants:
   - name: CH32X035R8T6
     chip_id: 80
-    flash_size: 64K
+    flash_size: 62K
   - name: CH32X035C8T6
     chip_id: 81
-    flash_size: 64K
+    flash_size: 62K
   - name: CH32X035F8U6
     chip_id: 94
-    flash_size: 64K
+    flash_size: 62K
   - name: CH32X035G8U6
     chip_id: 86
-    flash_size: 64K
+    flash_size: 62K
   - name: CH32X035G8R6
     chip_id: 91
-    flash_size: 64K
-
+    flash_size: 62K
   - name: CH32X035F7P6
     chip_id: 87
     flash_size: 49152
+  - name: CH32X033F8P6
+    chip_id: 90 # 0x5a
+    flash_size: 62K
 
