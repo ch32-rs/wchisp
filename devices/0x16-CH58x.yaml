@@ -37,6 +37,7 @@ config_registers:
     # reset: 0xd73f0f4d
     # See-also: #26
     reset: 0xd50fff4f # WeActStudio default
+    enable_debug: 0x450f3fd7 # WCHISPTool default
     type: u32
     fields:
       - bit_range: [2, 0]
@@ -99,4 +100,16 @@ variants:
     chip_id: 0x83
     flash_size: 458752
     eeprom_size: 557056 # 512KB
+    eeprom_start_addr: 458752
+
+  - name: CH584
+    chip_id: 0x84
+    flash_size: 448K
+    eeprom_size: 96K
+    eeprom_start_addr: 458752
+
+  - name: CH585
+    chip_id: 0x85
+    flash_size: 448K
+    eeprom_size: 128K
     eeprom_start_addr: 458752
