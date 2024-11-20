@@ -93,8 +93,9 @@ pub struct ConfigRegister {
     pub offset: usize,
     pub name: String,
     #[serde(default)]
-    description: String,
+    pub description: String,
     pub reset: Option<u32>,
+    pub enable_debug: Option<u32>,
     #[serde(default)]
     pub explaination: BTreeMap<String, String>,
     #[serde(default)]
