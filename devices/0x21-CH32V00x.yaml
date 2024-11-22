@@ -131,3 +131,7 @@ variants:
   - name: CH32V007K8U6
     chip_id: 0x72
     flash_size: 62K
+  - name: CH32M007G8R6
+    chip_id: 0x70
+    flash_size: 62K
+  # TODO: add CH32M007E8R6, CH32M007E8U6 when chip IDs known.
