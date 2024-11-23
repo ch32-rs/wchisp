@@ -16,7 +16,7 @@ config_registers:
     fields:
       - bit_range: [7, 0]
         name: RDPR
-        description: Read Protection. 0xA5 for unprotected, otherwise read-protected(ignoring WRP)
+        description: Read Protection. 0xA5 for unprotected, otherwise read-protected (ignoring WRPR)
         explaination:
           0xa5: Unprotected
           _: Protected
@@ -32,18 +32,18 @@ config_registers:
         name: STOP_RST
         description: System reset control under the stop mode
         explaination:
-          1: Disable
-          0: Enable
+          1: Disabled
+          0: Enabled
       # [2:2] + 16
       - bit_range: [18, 18]
         name: STANDBY_RST
-        description: System reset control under the standby mode, STANDY_RST
+        description: System reset control under the standby mode
         explaination:
-          1: Disable, entering standby-mode without RST
-          0: Enable
+          1: Disabled, entering standby-mode without RST
+          0: Enabled
       # [4:3] + 16
       - bit_range: [20, 19]
-        name: RST_MOD
+        name: RST_MODE
         description: Reset mode
         explaination:
           0b00: Enable RST alternative function
@@ -60,14 +60,14 @@ config_registers:
       - bit_range: [23, 16]
         name: DATA1
   - offset: 0x08
-    name: WRP
-    # Each bit represents 4K bytes (16 pages) to store the write protection status
+    name: WRPR
+    # Each bit is used to control the write-protect status of 2 sectors (1K/sector), max 64K
     description: Flash memory write protection status
     type: u32
     reset: 0xFFFFFFFF
     explaination:
       0xFFFFFFFF: Unprotected
-      _: Some 4K sections are protected
+      _: Some 1K sectors are protected
 variants:
   - name: CH32X035R8T6
     chip_id: 80
@@ -90,4 +90,3 @@ variants:
   - name: CH32X033F8P6
     chip_id: 90 # 0x5a
     flash_size: 62K
-
