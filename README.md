@@ -6,15 +6,15 @@ Command-line implementation of the WCHISPTool in Rust, by the ch32-rs team.
 
 This tool is a work in progress.
 
-- **NOTE**: CH32V003 **DOES NOT** have a USB ISP interface, use WCH-Link to program
-- **NOTE**: This tool is for USB ISP, not using with WCH-Link
-  - [ch32-rs/wlink](https://github.com/ch32-rs/wlink) is a command line tool for WCH-Link
+> [!NOTE]
+> This tool is for **USB** and **UART** ISP, not for use with WCH-Link.
+> - [ch32-rs/wlink](https://github.com/ch32-rs/wlink) is a command line tool for WCH-Link.
 
 ## Installing
 
 The prebuilt binaries are available on the [Nightly release page](https://github.com/ch32-rs/wchisp/releases/tag/nightly).
 
-For Windows users, you will need vc runtime to run the binary. You can download it from [Microsoft](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170).
+For Windows users, you will need VC runtime to run the binary. You can download it from [Microsoft](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170).
 
 Or else, you can install it from source.
 
@@ -56,10 +56,13 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", MODE="0666"
 ### Arch Linux
 
 Arch Linux users can install [wchisp](https://aur.archlinux.org/packages/wchisp) or [wchisp-git](https://aur.archlinux.org/packages/wchisp-git) via the AUR.
+
 ```bash
 yay wchisp
 ```
+
 or
+
 ```bash
 yay wchisp-git
 ```
@@ -96,6 +99,12 @@ WRP: 0xFFFFFFFF
 > wchisp config reset
 ```
 
+### CH32V00x Notes
+
+The CH32V00x series **DOES NOT** have a USB ISP interface; it can only be accessed via UART. Use `-s` or `--serial` command-line option to specify serial transport, and `-p` or `--port` option to specify COM/TTY port.
+
+Also note that ISP bootloader entry cannot be controlled via external pin state at reset. Instead, user application code must instruct device to enter the bootloader via setting `FLASH_STATR.MODE` flag and performing a software reset (see `PFIC_CFGR`).
+
 ## Tested On
 
 This tool should work on most WCH MCU chips. But I haven't tested it on any other chips.
@@ -124,6 +133,8 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
 - [x] CH32V203
   - [CH32V203G6 FlappyBoard](https://github.com/metro94/FlappyBoard)
   - [nanoCH32V203](https://github.com/wuxx/nanoCH32V203)
+- [x] CH32V003
+- [x] CH32X035
 - ... (feel free to open an issue whether it works on your chip or not)
 
 ## TODOs
@@ -144,8 +155,9 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
 - [x] EEPROM dump
 - [x] EEPROM erase
 - [x] EEPROM write
-- [x] select from multiple chips(using `-d` to select device index) `wchisp -d 0 info`
-- [ ] ISP via UART or Net
+- [x] select from multiple chips (using `-d` to select device index) `wchisp -d 0 info`
+- [x] ISP via UART
+- [ ] ISP via Net
 
 ## Related Works (Many Thanks!)
 
@@ -164,6 +176,6 @@ If it works for your devices, please open a pull request to modify this README p
 
 It it doesn't, please open an issue. Better provide the following information:
 
-- chip type (with variant surfix)
-- debug print of usb packets
-- correct usb packets to negotiate with the chip (via USBPcap or other tools)
+- Chip type (with variant suffix).
+- Debug print of USB packets.
+- Correct USB packets to negotiate with the chip (via USBPcap or other tools).
