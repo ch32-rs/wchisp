@@ -44,7 +44,7 @@ jobs:
             arch: linux-aarch64
           - os: macos-latest
             arch: macos-arm64
-          - os: macos-12
+          - os: macos-13
             arch: macos-x64
     runs-on: ${{ matrix.config.os }}
 
@@ -127,7 +127,7 @@ jobs:
             echo "Compressing $f"
             if [[ $f == wchisp-win* ]]; then
               zip -r $f.zip $f
-            else 
+            else
               tar -czvf $f.tar.gz $f
             fi
           done
