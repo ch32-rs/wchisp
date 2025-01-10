@@ -109,3 +109,6 @@ variants:
     alt_chip_ids: [0x39]
     flash_size: 32K
   # FIXME: missing 0x38
+  - name: CH32V203G8R6
+    chip_id: 0x3b
+    flash_size: 64K
