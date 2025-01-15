@@ -58,13 +58,13 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="4348", ATTRS{idProduct}=="55e0", MODE="0666"
 Arch Linux users can install [wchisp](https://aur.archlinux.org/packages/wchisp) or [wchisp-git](https://aur.archlinux.org/packages/wchisp-git) via the AUR.
 
 ```bash
-yay wchisp
+yay -S wchisp
 ```
 
 or
 
 ```bash
-yay wchisp-git
+yay -S wchisp-git
 ```
 
 ## Usage
