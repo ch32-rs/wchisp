@@ -194,6 +194,31 @@ impl<'a> Flashing<'a> {
         Ok(())
     }
 
+    /// Protect code flash.
+    pub fn protect(&mut self, force: bool) -> Result<()> {
+        if !force && self.code_flash_protected {
+            return Ok(());
+        }
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        let mut config = resp.payload()[2..14].to_vec(); // 4 x u32
+        config[0] = 0xff; // code flash protected
+        config[1] = 0x00;
+
+        // WPR register
+        config[8..12].copy_from_slice(&[0xff; 4]);
+
+        let write_conf = Command::write_config(CFG_MASK_RDPR_USER_DATA_WPR, config);
+        let resp = self.transport.transfer(write_conf)?;
+        anyhow::ensure!(resp.is_ok(), "write_config failed");
+
+        log::info!("Code Flash protected");
+        self.reset()?;
+        Ok(())
+    }
+
     pub fn reset(&mut self) -> Result<()> {
         let isp_end = Command::isp_end(1);
         let resp = self.transport.transfer(isp_end)?;

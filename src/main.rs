@@ -101,6 +101,8 @@ enum ConfigCommands {
     },
     /// Unprotect code flash
     Unprotect {},
+    /// Protect code flash
+    Protect {},
 }
 
 #[derive(Subcommand)]
@@ -331,6 +333,9 @@ fn main() -> Result<()> {
                 }
                 Some(ConfigCommands::Unprotect {}) => {
                     flashing.unprotect(true)?;
+                }
+                Some(ConfigCommands::Protect {}) => {
+                    flashing.protect(true)?;
                 }
             }
         }
