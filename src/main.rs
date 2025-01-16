@@ -194,7 +194,7 @@ fn main() -> Result<()> {
             let mut flashing = get_flashing(&cli)?;
 
             if flashing.is_protected() {
-                log::error!("Code flash protected, unable to erase flash");
+                log::error!("Code Flash protected, unable to erase flash");
                 log::info!("hint: use `wchisp config unprotect` to disable the protection");
                 break 'erase;
             }
@@ -214,7 +214,7 @@ fn main() -> Result<()> {
             flashing.dump_info()?;
 
             if flashing.is_protected() {
-                log::error!("Code flash protected, unable to flash firmware to device");
+                log::error!("Code Flash protected, unable to flash firmware to device");
                 log::info!("hint: use `wchisp config unprotect` to disable the protection");
                 break 'flashing;
             }
