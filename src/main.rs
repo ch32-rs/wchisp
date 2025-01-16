@@ -101,6 +101,8 @@ enum ConfigCommands {
     },
     /// Unprotect code flash
     Unprotect {},
+    /// Protect code flash
+    Protect {},
 }
 
 #[derive(Subcommand)]
@@ -188,8 +190,14 @@ fn main() -> Result<()> {
 
             let _ = flashing.reset();
         }
-        Some(Commands::Erase {}) => {
+        Some(Commands::Erase {}) => 'erase: {
             let mut flashing = get_flashing(&cli)?;
+
+            if flashing.is_protected() {
+                log::error!("Code Flash protected, unable to erase flash");
+                log::info!("hint: use `wchisp config unprotect` to disable the protection");
+                break 'erase;
+            }
 
             let sectors = flashing.chip.flash_size / 1024;
             flashing.erase_code(sectors)?;
@@ -200,10 +208,16 @@ fn main() -> Result<()> {
             no_erase,
             no_verify,
             no_reset,
-        }) => {
+        }) => 'flashing: {
             let mut flashing = get_flashing(&cli)?;
 
             flashing.dump_info()?;
+
+            if flashing.is_protected() {
+                log::error!("Code Flash protected, unable to flash firmware to device");
+                log::info!("hint: use `wchisp config unprotect` to disable the protection");
+                break 'flashing;
+            }
 
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
             extend_firmware_to_sector_boundary(&mut binary);
@@ -331,6 +345,9 @@ fn main() -> Result<()> {
                 }
                 Some(ConfigCommands::Unprotect {}) => {
                     flashing.unprotect(true)?;
+                }
+                Some(ConfigCommands::Protect {}) => {
+                    flashing.protect(true)?;
                 }
             }
         }
