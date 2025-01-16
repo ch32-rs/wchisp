@@ -219,6 +219,10 @@ impl<'a> Flashing<'a> {
         Ok(())
     }
 
+    pub fn is_protected(&self) -> bool {
+        self.code_flash_protected
+    }
+
     pub fn reset(&mut self) -> Result<()> {
         let isp_end = Command::isp_end(1);
         let resp = self.transport.transfer(isp_end)?;
