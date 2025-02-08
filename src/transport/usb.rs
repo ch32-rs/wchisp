@@ -27,7 +27,7 @@ impl UsbTransport {
                     .device_descriptor()
                     .map(|desc| {
                         (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
-                            && desc.product_id() == 0x55e0
+                            && (desc.product_id() == 0x55e0 || desc.product_id() == 0x8012)
                     })
                     .unwrap_or(false)
             })
@@ -52,7 +52,7 @@ impl UsbTransport {
                     .device_descriptor()
                     .map(|desc| {
                         (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
-                            && desc.product_id() == 0x55e0
+                            && (desc.product_id() == 0x55e0 || desc.product_id() == 0x8012)
                     })
                     .unwrap_or(false)
             })
@@ -104,10 +104,22 @@ impl UsbTransport {
             anyhow::bail!("USB Endpoints not found");
         }
 
+       log::debug!("Checking for active kernel driver");
+            match device_handle.kernel_driver_active(1)? {
+                true => {
+                    log::info!("Detaching kernel driver");
+                    device_handle.detach_kernel_driver(1)?;
+                }
+                false => {
+                    log::debug!("Kernel driver inactive");
+                }
+        }
+
         device_handle.set_active_configuration(1)?;
         let _config = device.active_config_descriptor()?;
         let _descriptor = device.device_descriptor()?;
 
+        log::info!("Interface claimed");
         device_handle.claim_interface(0)?;
 
         Ok(UsbTransport { device_handle })
