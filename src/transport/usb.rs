@@ -27,7 +27,7 @@ impl UsbTransport {
                     .device_descriptor()
                     .map(|desc| {
                         (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
-                            && desc.product_id() == 0x55e0
+                            && (desc.product_id() == 0x55e0 || desc.product_id() == 0x8012)
                     })
                     .unwrap_or(false)
             })
@@ -52,7 +52,7 @@ impl UsbTransport {
                     .device_descriptor()
                     .map(|desc| {
                         (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
-                            && desc.product_id() == 0x55e0
+                            && (desc.product_id() == 0x55e0 || desc.product_id() == 0x8012)
                     })
                     .unwrap_or(false)
             })
