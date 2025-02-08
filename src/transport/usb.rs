@@ -104,10 +104,22 @@ impl UsbTransport {
             anyhow::bail!("USB Endpoints not found");
         }
 
+       log::debug!("Checking for active kernel driver");
+            match device_handle.kernel_driver_active(1)? {
+                true => {
+                    log::info!("Detaching kernel driver");
+                    device_handle.detach_kernel_driver(1)?;
+                }
+                false => {
+                    log::debug!("Kernel driver inactive");
+                }
+        }
+
         device_handle.set_active_configuration(1)?;
         let _config = device.active_config_descriptor()?;
         let _descriptor = device.device_descriptor()?;
 
+        log::info!("Interface claimed");
         device_handle.claim_interface(0)?;
 
         Ok(UsbTransport { device_handle })
