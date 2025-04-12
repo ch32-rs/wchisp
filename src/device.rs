@@ -97,7 +97,7 @@ pub struct ConfigRegister {
     pub reset: Option<u32>,
     pub enable_debug: Option<u32>,
     #[serde(default)]
-    pub explaination: BTreeMap<String, String>,
+    pub explanation: BTreeMap<String, String>,
     #[serde(default)]
     pub fields: Vec<RegisterField>,
 }
@@ -124,7 +124,7 @@ pub struct RegisterField {
     pub description: String,
     // NOTE: use BTreeMap for strict ordering for digits and `_`
     #[serde(default)]
-    pub explaination: BTreeMap<String, String>,
+    pub explanation: BTreeMap<String, String>,
 }
 
 impl RegisterField {
@@ -268,19 +268,19 @@ where
 {
     let s: String = serde::Deserialize::deserialize(deserializer)?;
     if s.starts_with("0x") || s.starts_with("0X") {
-        Ok(u32::from_str_radix(&s[2..], 16).expect(&format!("error while parsering {:?}", s)))
+        Ok(u32::from_str_radix(&s[2..], 16).expect(&format!("error while parsing {:?}", s)))
     } else if s.ends_with("K") {
         Ok(1024
             * u32::from_str_radix(&s[..s.len() - 1], 10)
-                .expect(&format!("error while parsering {:?}", s)))
+                .expect(&format!("error while parsing {:?}", s)))
     } else if s.ends_with("KiB") {
         Ok(1024
             * u32::from_str_radix(&s[..s.len() - 3], 10)
-                .expect(&format!("error while parsering {:?}", s)))
+                .expect(&format!("error while parsing {:?}", s)))
     } else if s.ends_with("KB") {
         Ok(1024
             * u32::from_str_radix(&s[..s.len() - 2], 10)
-                .expect(&format!("error while parsering {:?}", s)))
+                .expect(&format!("error while parsing {:?}", s)))
     } else {
         // parse pure digits here
         Ok(s.parse().unwrap())
@@ -289,9 +289,9 @@ where
 
 pub fn parse_number(s: &str) -> Option<u32> {
     if s.starts_with("0x") || s.starts_with("0X") {
-        Some(u32::from_str_radix(&s[2..], 16).expect(&format!("error while parsering {:?}", s)))
+        Some(u32::from_str_radix(&s[2..], 16).expect(&format!("error while parsing {:?}", s)))
     } else if s.starts_with("0b") || s.starts_with("0B") {
-        Some(u32::from_str_radix(&s[2..], 2).expect(&format!("error while parsering {:?}", s)))
+        Some(u32::from_str_radix(&s[2..], 2).expect(&format!("error while parsing {:?}", s)))
     } else {
         Some(s.parse().expect("must be a number"))
     }

@@ -16,8 +16,8 @@ config_registers:
       - bit_range: [7, 0] # inclusive range, [MSB, LSB]
         name: <string:NAME_OF_FIELD>
         description: <string>
-        explaination:
-          0xa5: Unprotected # an explaination to field value
+        explanation:
+          0xa5: Unprotected # an explanation to field value
           _: Protected      # matches all remaining cases
 variants:
   - name: <string:CHXXX, unique id of the chip, with or without variant surfix>
@@ -26,6 +26,6 @@ variants:
     flash_size: 64K # 0x10000, 64KiB, 64KB, 64K
     eeprom_size: 32K
     eeprom_start_addr: 0x0
-    support_usb: true # config can overwrite faimily config
+    support_usb: true # config can overwrite family config
     support_serial: true
     support_net: false

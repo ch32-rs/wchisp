@@ -24,7 +24,7 @@ config_registers: &config_registers_ch548_ch549
     fields:
       - bit_range: [2, 0]
         name: LV_RST_VOL
-        explaination:
+        explanation:
           0b000: 2.4V
           0b001: 2.4V
           0b010: 2.7V

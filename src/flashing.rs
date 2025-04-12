@@ -36,7 +36,7 @@ impl<'a> Flashing<'a> {
     pub fn new_from_transport(mut transport: impl Transport + 'a) -> Result<Self> {
         let identify = Command::identify(0, 0);
         let resp = transport.transfer(identify)?;
-        anyhow::ensure!(resp.is_ok(), "idenfity chip failed");
+        anyhow::ensure!(resp.is_ok(), "identify chip failed");
 
         let chip = Flashing::get_chip(&mut transport)?;
         log::debug!("found chip: {}", chip);
@@ -94,7 +94,7 @@ impl<'a> Flashing<'a> {
     }
 
     /// Reidentify chip using correct chip uid
-    pub fn reidenfity(&mut self) -> Result<()> {
+    pub fn reidentify(&mut self) -> Result<()> {
         let identify = Command::identify(self.chip.chip_id, self.chip.device_type);
         let resp = self.transport.transfer(identify)?;
 
@@ -467,9 +467,9 @@ impl<'a> Flashing<'a> {
             let n = raw.pread_with::<u32>(reg_def.offset, LE)?;
             println!("{}: 0x{:08X}", reg_def.name, n);
 
-            for (val, expain) in &reg_def.explaination {
+            for (val, explain) in &reg_def.explanation {
                 if val == "_" || Some(n) == parse_number(val) {
-                    println!("  `- {}", expain);
+                    println!("  `- {}", explain);
                     break;
                 }
             }
@@ -485,9 +485,9 @@ impl<'a> Flashing<'a> {
                     b,
                     b
                 );
-                for (val, expain) in &field_def.explaination {
+                for (val, explain) in &field_def.explanation {
                     if val == "_" || Some(b) == parse_number(val) {
-                        println!("    `- {}", expain);
+                        println!("    `- {}", explain);
                         break;
                     }
                 }

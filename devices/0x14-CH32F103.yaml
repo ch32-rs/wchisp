@@ -15,26 +15,26 @@ config_registers:
       - bit_range: [7, 0]
         name: RDPR
         description: Read Protection. 0xA5 for unprotected
-        explaination:
+        explanation:
           0xa5: Unprotected
           _: Protected
       # byte 2
       - bit_range: [16, 16]
         name: IWDG_SW
         description: Independent watchdog (IWDG) hardware enable
-        explaination:
+        explanation:
           1: IWDG enabled by the software, and disabled by hardware
           0: IWDG enabled by the software (decided along with the LSI clock)
       - bit_range: [17, 17]
         name: STOP_RST
         description: System reset control under the stop mode
-        explaination:
+        explanation:
           1: Disable
           0: Enable
       - bit_range: [18, 18]
         name: STANDBY_RST
         description: System reset control under the standby mode, STANDY_RST
-        explaination:
+        explanation:
           1: Disable, entering standby-mode without RST
           0: Enable
   - offset: 0x04
@@ -53,7 +53,7 @@ config_registers:
     description: Flash memory write protection status
     type: u32
     reset: 0xFFFFFFFF
-    explaination:
+    explanation:
       0xFFFFFFFF: Unprotected
       _: Some 4K sections are protected
 variants:
