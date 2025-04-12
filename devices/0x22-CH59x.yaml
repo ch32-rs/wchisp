@@ -20,12 +20,12 @@ config_registers:
       - bit_range: [0, 0]
         name: NO_KEY_SERIAL_DOWNLOAD
         description: Turn on No-key serial port download
-        explaination:
+        explanation:
           1: Enable
           0: Disable
       - bit_range: [1, 1]
         name: DOWNLOAD_CFG
-        explaination:
+        explanation:
           1: PB22(Default set)
           0: PB11
   - offset: 0x08
@@ -36,47 +36,47 @@ config_registers:
     fields:
       - bit_range: [2, 0]
         name: RESERVED
-        explaination:
+        explanation:
           0b101: Default
           _: Error
       - bit_range: [3, 3]
         name: CFG_RESET_EN
         description: "RST# external manual reset input pin enable"
-        explaination:
+        explanation:
           0: Disable
           1: Enable
       - bit_range: [4, 4]
         name: CFG_DEBUG_EN
         description: "Two-wire simulation debug interface SWD enable"
-        explaination:
+        explanation:
           0: Disable
           1: Enable
       - bit_range: [5, 5]
         name: RESERVED
-        explaination:
+        explanation:
           0: Default
           _: Error
       - bit_range: [6, 6]
         name: CFG_BOOT_EN
         description: "Bootloader enable"
-        explaination:
+        explanation:
           0: Disable
           1: Enable
       - bit_range: [7, 7]
         name: CFG_ROM_READ
         description: "Code and data protection mode in FlashROM"
-        explaination:
+        explanation:
           0: Disable the programmer to read out, and keep the program secret
           1: Read enable
       - bit_range: [27, 8]
         name: RESERVED
-        explaination:
+        explanation:
           0xFF0F: Default
           _: Error
       - bit_range: [31, 28]
         name: VALID_SIG
         description: "Configuration information valid flag, fixed value"
-        explaination:
+        explanation:
           0b0100: Valid
           _: Error
 
@@ -90,4 +90,3 @@ variants:
     chip_id: 0x92 # 146
     flash_size: 458752
     eeprom_size: 32768
-

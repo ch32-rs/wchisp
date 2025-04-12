@@ -17,25 +17,25 @@ config_registers:
       - bit_range: [7, 0]
         name: RDPR
         description: Read Protection. 0xA5 for unprotected, otherwise read-protected (ignoring WRPR)
-        explaination:
+        explanation:
           0xa5: Unprotected
           _: Protected
       - bit_range: [16, 16]
         name: IWDG_SW
         description: Independent watchdog (IWDG) hardware enable
-        explaination:
+        explanation:
           1: IWDG enabled by software, and not enabled by hardware
           0: IWDG enabled by hardware (along with the LSI clock)
       - bit_range: [18, 18]
         name: STANDBY_RST
         description: System reset control under the standby mode
-        explaination:
+        explanation:
           1: Disabled, entering standby-mode without RST
           0: Enabled
       - bit_range: [20, 19]
         name: RST_MODE
         description: External pin PD7 reset mode
-        explaination:
+        explanation:
           0b00: Ignoring pin states within 128us after turning on the multiplexing function
           0b01: Ignoring pin states within 1ms after turning on the multiplexing function
           0b10: Ignoring pin states within 12ms after turning on the multiplexing function
@@ -43,7 +43,7 @@ config_registers:
       - bit_range: [21, 21]
         name: START_MODE
         description: Power-on startup mode
-        explaination:
+        explanation:
           1: Start from BOOT area
           0: Start from user CODE area
   - offset: 0x04
@@ -64,7 +64,7 @@ config_registers:
     description: Flash memory write protection status
     type: u32
     reset: 0xFFFFFFFF
-    explaination:
+    explanation:
       0xFFFFFFFF: Unprotected
       _: Some 1K sections are protected
 variants:

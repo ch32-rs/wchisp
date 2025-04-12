@@ -20,12 +20,12 @@ config_registers:
       - bit_range: [0, 0]
         name: NO_KEY_SERIAL_DOWNLOAD
         description: Turn on No-key serial port download
-        explaination:
+        explanation:
           1: Enable
           0: Disable
       - bit_range: [1, 1]
         name: DOWNLOAD_CFG
-        explaination:
+        explanation:
           1: P4.6 / P15 / P3.6(Default set)
           0: P5.1 / P51 / P1.5
   - offset: 0x08
@@ -36,42 +36,42 @@ config_registers:
       # Configuration Information, sec 6.2
       - bit_range: [15, 15]
         name: CODE_PROTECT
-        explaination:
+        explanation:
           0: Forbid code & data protection
           1: Readable
       - bit_range: [14, 14]
         name: NO_BOOT_LOAD
-        explaination:
+        explanation:
           0: Boot from 0x0000 Application
           1: Boot from 0xf400 Bootloader
       - bit_range: [13, 13]
         name: EN_LONG_RESET
-        explaination:
+        explanation:
           0: Short reset
           1: Wide reset, add 87ms reset time
       - bit_range: [12, 12]
         name: XT_OSC_STRONG
-        explaination:
+        explanation:
           0: Standard
           1: Enhanced
       - bit_range: [11, 11]
         name: EN_P5.7_RESET
-        explaination:
+        explanation:
           0: Forbid
           1: Enable reset
       - bit_range: [10, 10]
         name: EN_P0_PULLUP
-        explaination:
+        explanation:
           0: Forbid
           1: Enable
       - bit_range: [9, 8]
         name: RESERVED
-        explaination:
+        explanation:
           0b10: Default
           _: Error
       - bit_range: [7, 0]
         name: RESERVED
-        explaination:
+        explanation:
           0b11111111: Default
           _: Error
 variants:

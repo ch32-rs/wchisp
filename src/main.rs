@@ -283,7 +283,7 @@ fn main() -> Result<()> {
 
             match command {
                 None | Some(EepromCommands::Dump { .. }) => {
-                    flashing.reidenfity()?;
+                    flashing.reidentify()?;
 
                     log::info!("Reading EEPROM(Data Flash)...");
 
@@ -303,14 +303,14 @@ fn main() -> Result<()> {
                     }
                 }
                 Some(EepromCommands::Erase {}) => {
-                    flashing.reidenfity()?;
+                    flashing.reidentify()?;
 
                     log::info!("Erasing EEPROM(Data Flash)...");
                     flashing.erase_data()?;
                     log::info!("EEPROM erased");
                 }
                 Some(EepromCommands::Write { path, no_erase }) => {
-                    flashing.reidenfity()?;
+                    flashing.reidentify()?;
 
                     if *no_erase {
                         log::warn!("Skipping erase");
