@@ -86,6 +86,10 @@ jobs:
         mkdir wchisp-${{ matrix.config.arch }}
         cp $WCHISP_EXE wchisp-${{ matrix.config.arch }}
         cp README.md wchisp-${{ matrix.config.arch }}
+
+        if [[ "${{ matrix.config.arch }}" == "win-x64" ]]; then
+          cp src/CH375DLL64.dll wchisp-${{ matrix.config.arch }}
+        fi
       shell: bash
     - uses: actions/upload-artifact@v4
       with:
