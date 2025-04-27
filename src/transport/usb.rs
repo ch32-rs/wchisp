@@ -212,7 +212,13 @@ pub mod ch375_driver {
                 CH375_DRIVER = Some(
                     Library::new("CH375DLL64.dll")
                         .map_err(|_| {
-                            anyhow::Error::msg("CH375DLL64.dll not found")
+                            anyhow::Error::msg(
+                                "CH375DLL64.dll not found. \
+                                Please download it from the WCH official website \
+                                and put the dll next to this executable. \
+                                You may download it from https://www.wch-ic.com/downloads/CH372DRV_ZIP.html, \
+                                or search for 'CH375' in the WCH websites if the link is broken."
+                            )
                         })?,
                 );
                 let lib = CH375_DRIVER.as_ref().unwrap();
