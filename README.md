@@ -38,10 +38,9 @@ Click the newest runs at [Github Actions Page](https://github.com/ch32-rs/wchisp
 
 ### Note for Windows
 
-If you are using Windows, you need to install the WinUSB driver for your device.
-See [Zadig](https://zadig.akeo.ie/).
+If you are using Windows, you may need to install the CH375DLL64.dll if you do not have it in your system. If you encounter a "CH375DLL64.dll not found" error, please download it from the WCH official website and put the dll next to this executable. You may download it from https://www.wch-ic.com/downloads/CH372DRV_ZIP.html, or search for 'CH375' on WCH websites if the link is broken. When you use the official WCH driver you installed with IDE or WCHISPTOOL, CH375DLL64.dll allows you to program the target chips without changing the driver.
 
-NOTE: This is not compatible with the Official WCH driver you installed with IDE.
+It is also OK to use the WinUSB driver with [Zadig](https://zadig.akeo.ie/).
 
 ### Note for Linux
 
