@@ -39,6 +39,7 @@ config_registers_ch571_ch573: &config_registers_ch571_ch573
     # CFG_DEBUG_EN=1、CFG_RESET_EN=0、CFG_ROM_READ=0
     # enable 2-wire debug
     reset: 0x4FFF0F55
+    disable_debug: 0x4FFF0F45
     type: u32
     fields:
       - bit_range: [2, 0]

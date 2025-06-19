@@ -343,6 +343,40 @@ impl<'a> Flashing<'a> {
         Ok(())
     }
 
+    pub fn disable_debug(&mut self) -> Result<()> {
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        let mut raw = resp.payload()[2..].to_vec();
+
+        log::info!("Current config registers: {}", hex::encode(&raw));
+
+        for reg_desc in &self.chip.config_registers {
+            if let Some(reset) = reg_desc.reset {
+                raw.pwrite_with(reset, reg_desc.offset, scroll::LE)?;
+            }
+            if let Some(disable_debug) = reg_desc.disable_debug {
+                raw.pwrite_with(disable_debug, reg_desc.offset, scroll::LE)?;
+            }
+        }
+
+        log::info!(
+            "Reset config registers to debug disabled:   {}",
+            hex::encode(&raw)
+        );
+        let write_conf = Command::write_config(CFG_MASK_RDPR_USER_DATA_WPR, raw);
+        let resp = self.transport.transfer(write_conf)?;
+        anyhow::ensure!(resp.is_ok(), "write_config failed");
+
+        // read back
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        Ok(())
+    }
+
     /// Dump EEPROM, i.e. data flash.
     pub fn dump_eeprom(&mut self) -> Result<Vec<u8>> {
         const CHUNK: usize = 0x3a;
