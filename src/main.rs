@@ -97,6 +97,8 @@ enum ConfigCommands {
     Reset {},
     /// Enable SWD mode(simulation mode)
     EnableDebug {},
+    /// Disable SWD mode(simulation mode)
+    DisableDebug {},
     /// Set config register to new value
     Set {
         /// New value of the config register
@@ -346,6 +348,10 @@ fn main() -> Result<()> {
                 Some(ConfigCommands::EnableDebug {}) => {
                     flashing.enable_debug()?;
                     log::info!("Debug mode enabled");
+                }
+                Some(ConfigCommands::DisableDebug {}) => {
+                    flashing.disable_debug()?;
+                    log::info!("Debug mode disabled");
                 }
                 Some(ConfigCommands::Set { value }) => {
                     // flashing.write_config(value)?;

@@ -96,6 +96,7 @@ pub struct ConfigRegister {
     pub description: String,
     pub reset: Option<u32>,
     pub enable_debug: Option<u32>,
+    pub disable_debug: Option<u32>,
     #[serde(default)]
     pub explaination: BTreeMap<String, String>,
     #[serde(default)]
