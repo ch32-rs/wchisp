@@ -88,6 +88,67 @@ config_registers_ch571_ch573: &config_registers_ch571_ch573
           0b0100: Valid
           _: Error
 
+config_registers_ch570_ch572: &config_registers_ch570_ch572
+  - offset: 0x00
+    name: RESERVED
+    description: Reserved 32-bit word
+    reset: 0xFFFFFFFF
+    type: u32
+  - offset: 0x04
+    name: WPROTECT
+    reset: 0xFFFFFFFF
+    type: u32
+  # Table 2.3 in Chip Datasheet
+  - offset: 0x08
+    name: USER_CFG
+    description: User config register
+    # new chip has 0x00400000
+    reset: 0x40FF0040
+    type: u32
+    fields:
+      - bit_range: [2, 0]
+        name: RESERVED
+      - bit_range: [3, 3]
+        name: CFG_RESET_EN
+        description: "RST# external manual reset input pin enable"
+        explaination:
+          0: Disable
+          1: Enable
+      - bit_range: [4, 4]
+        name: CFG_RST_PIN_EN
+        description: "RST# external manual reset input pin choice"
+        explaination:
+          0: PA8
+          1: PA7
+      - bit_range: [5, 5]
+        name: CFG_IWDG_EN
+        description: "Independent watchdog timer IWDG enable"
+        explaination:
+          0: Disable
+          1: Enable
+      - bit_range: [6, 6]
+        name: CFG_BOOT_EN
+        description: "Bootloader enable"
+        explaination:
+          0: Disable
+          1: Enable
+      - bit_range: [15, 7]
+        name: RESERVED
+      - bit_range: [23, 16]
+        name: CFG_ROM_READ
+        description: "Code and data protection mode in FlashROM"
+        explaination:
+          _: Disable the programmer to read out, and keep the program secret
+          0x3A: Read enable
+      - bit_range: [27, 24]
+        name: RESERVED
+      - bit_range: [31, 28]
+        name: VALID_SIG
+        description: "Configuration information valid flag, fixed value"
+        explaination:
+          0b0100: Valid
+          _: Error
+
 config_registers_ch579: &config_registers_ch579
   - offset: 0x00
     name: RESERVED
@@ -179,6 +240,20 @@ variants:
     eeprom_size: 32768
     eeprom_start_addr: 458752
     config_registers: *config_registers_ch571_ch573
+
+  - name: CH570
+    chip_id: 0x70
+    flash_size: 245760
+    eeprom_size: 0
+    eeprom_start_addr: 245760
+    config_registers: *config_registers_ch570_ch572
+
+  - name: CH572
+    chip_id: 0x72
+    flash_size: 245760
+    eeprom_size: 0
+    eeprom_start_addr: 245760
+    config_registers: *config_registers_ch570_ch572
 
   - name: CH577
     chip_id: 0x77
