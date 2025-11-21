@@ -105,11 +105,11 @@ variants:
   - name: CH584
     chip_id: 0x84
     flash_size: 448K
-    eeprom_size: 96K
+    eeprom_size: 32K
     eeprom_start_addr: 458752
 
   - name: CH585
     chip_id: 0x85
     flash_size: 448K
-    eeprom_size: 128K
+    eeprom_size: 32K
     eeprom_start_addr: 458752
