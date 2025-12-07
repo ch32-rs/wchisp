@@ -11,7 +11,6 @@ const ENDPOINT_IN: u8 = 0x82;
 
 const USB_TIMEOUT_MS: u64 = 5000;
 
-
 pub struct UsbTransport {
     device_handle: Option<DeviceHandle<rusb::Context>>,
     #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
@@ -153,7 +152,8 @@ impl Drop for UsbTransport {
         if let Some(ref mut handle) = self.device_handle {
             let _ = handle.release_interface(0);
         } else {
-            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]{
+            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+            {
                 if self.ch375_index >= 0 {
                     ch375_driver::drop(self.ch375_index as usize);
                 }
@@ -168,7 +168,8 @@ impl Transport for UsbTransport {
         if let Some(ref mut handle) = self.device_handle {
             handle.write_bulk(ENDPOINT_OUT, raw, Duration::from_millis(USB_TIMEOUT_MS))?;
         } else {
-            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]{
+            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+            {
                 if self.ch375_index >= 0 {
                     //log::debug!("CH375USBDevice index {} send_raw {:?}", self.ch375_index, raw);
                     ch375_driver::write_raw(self.ch375_index as usize, raw)?;
@@ -186,7 +187,8 @@ impl Transport for UsbTransport {
             let nread = handle.read_bulk(ENDPOINT_IN, &mut buf, timeout)?;
             return Ok(buf[..nread].to_vec());
         } else {
-            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]{
+            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+            {
                 if self.ch375_index >= 0 {
                     let len = ch375_driver::read_raw(self.ch375_index as usize, &mut buf)?;
                     // log::debug!("CH375USBDevice index {} , len {} recv_raw {:?}", self.ch375_index, len, buf);
@@ -301,7 +303,7 @@ pub mod ch375_driver {
         let get_device_descriptor: Symbol<
             unsafe extern "stdcall" fn(u32, *mut UsbDeviceDescriptor, *mut u32) -> bool,
         > = unsafe { lib.get(b"CH375GetDeviceDescr").unwrap() };
-        
+
         const INVALID_HANDLE: u32 = 0xffffffff;
 
         let mut idx = 0;
@@ -315,9 +317,7 @@ pub mod ch375_driver {
                 let id_vendor = descr.idVendor;
                 let id_product = descr.idProduct;
 
-                if (id_vendor == 0x4348 || id_vendor == 0x1a86)
-                    && id_product == 0x55e0
-                {
+                if (id_vendor == 0x4348 || id_vendor == 0x1a86) && id_product == 0x55e0 {
                     if idx == nth {
                         log::debug!("Device #{}: {:04x}:{:04x}", i, id_vendor, id_product);
                         return Ok(i as isize);
@@ -331,17 +331,14 @@ pub mod ch375_driver {
 
         return Ok(-1 as isize);
     }
-    
+
     pub fn write_raw(nth: usize, buf: &[u8]) -> Result<()> {
         let lib = ensure_library_load()?;
-        let write_data: Symbol<
-            unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool,
-        > = unsafe { lib.get(b"CH375WriteData").unwrap() };
+        let write_data: Symbol<unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool> =
+            unsafe { lib.get(b"CH375WriteData").unwrap() };
 
         let mut len = buf.len() as u32;
-        let ret = unsafe {
-            write_data(nth as u32, buf.as_ptr() as *mut u8, &mut len)
-        };
+        let ret = unsafe { write_data(nth as u32, buf.as_ptr() as *mut u8, &mut len) };
         if ret {
             Ok(())
         } else {
@@ -351,14 +348,11 @@ pub mod ch375_driver {
 
     pub fn read_raw(nth: usize, buf: &mut [u8]) -> Result<usize> {
         let lib = ensure_library_load()?;
-        let read_data: Symbol<
-            unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool,
-        > = unsafe { lib.get(b"CH375ReadData").unwrap() };
+        let read_data: Symbol<unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool> =
+            unsafe { lib.get(b"CH375ReadData").unwrap() };
 
         let mut len = buf.len() as u32;
-        let ret = unsafe {
-            read_data(nth as u32, buf.as_mut_ptr(), &mut len)
-        };
+        let ret = unsafe { read_data(nth as u32, buf.as_mut_ptr(), &mut len) };
         if ret {
             Ok(len as usize)
         } else {
@@ -369,9 +363,8 @@ pub mod ch375_driver {
     pub fn set_timeout(nth: usize, timeout: Duration) {
         let lib = ensure_library_load().unwrap();
 
-        let set_timeout_ex: Symbol<
-            unsafe extern "stdcall" fn(u32, u32, u32, u32, u32) -> bool,
-        > = unsafe { lib.get(b"CH375SetTimeoutEx").unwrap() };
+        let set_timeout_ex: Symbol<unsafe extern "stdcall" fn(u32, u32, u32, u32, u32) -> bool> =
+            unsafe { lib.get(b"CH375SetTimeoutEx").unwrap() };
 
         let ds = timeout.as_millis() as u32;
 
