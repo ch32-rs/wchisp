@@ -2,26 +2,25 @@ name: Rust
 
 on:
   push:
+    branches: [main]
     paths:
       - "Cargo.toml"
+      - "Cargo.lock"
       - "src/**"
       - "devices/**"
-      - "!**.md"
       - ".github/workflows/rust.yml"
   pull_request:
-    branches: [ main ]
     paths:
       - "Cargo.toml"
+      - "Cargo.lock"
       - "src/**"
       - "devices/**"
-      - "!**.md"
       - ".github/workflows/rust.yml"
   workflow_dispatch:
   release:
-    types:
-      - created
-  schedule: # Every day at the 2 P.M. (UTC) we run a scheduled nightly build
-    - cron: "0 14 * * *"
+    types: [created]
+  schedule:
+    - cron: "0 14 * * *" # Daily at 2 PM UTC
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -32,108 +31,122 @@ env:
 
 jobs:
   build:
-    name: build (${{ matrix.config.arch }})
+    name: Build ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        config:
-          - os: windows-latest
-            arch: win-x64
-          - os: ubuntu-latest
-            arch: linux-x64
-          - os: ubuntu-latest
-            arch: linux-aarch64
-          - os: macos-latest
-            arch: macos-arm64
-          - os: macos-13
-            arch: macos-x64
-    runs-on: ${{ matrix.config.os }}
+        include:
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact: win-x64
+            ext: .exe
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: linux-x64
+            ext: ""
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: linux-aarch64
+            ext: ""
+            cross: true
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact: macos-arm64
+            ext: ""
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Configure target
-      run: |
-        if [[ "${{ matrix.config.arch }}" == "linux-aarch64" ]]; then
-          rustup target add aarch64-unknown-linux-gnu
-          sudo apt-get install gcc-aarch64-linux-gnu
-          echo TARGET="--target aarch64-unknown-linux-gnu" >> $GITHUB_ENV
-          echo RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-        else
-          echo TARGET="" >> $GITHUB_ENV
-        fi
-      shell: bash
+      - uses: actions/checkout@v4
 
-    - name: Build
-      run: cargo build --release ${{ env.TARGET }}
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-    - name: Run tests
-      if: matrix.config.arch != 'linux-aarch64'
-      run: cargo test --release ${{ env.TARGET }}
+      - name: Install cargo-zigbuild
+        if: matrix.cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild
 
-    - name: Run help
-      if: matrix.config.arch != 'linux-aarch64'
-      run: cargo run --release ${{ env.TARGET }} -- --help
+      - name: Install Zig
+        if: matrix.cross
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.13.0
 
-    - name: Prepare artifacts
-      run: |
-        if [[ "${{ matrix.config.arch }}" == "win-x64" ]]; then
-          WCHISP_EXE="target/release/wchisp.exe"
-        elif [[ "${{ matrix.config.arch }}" == "linux-aarch64" ]]; then
-          WCHISP_EXE="target/aarch64-unknown-linux-gnu/release/wchisp"
-        else
-          WCHISP_EXE="target/release/wchisp"
-        fi
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }}
 
-        mkdir wchisp-${{ matrix.config.arch }}
-        cp $WCHISP_EXE wchisp-${{ matrix.config.arch }}
-        cp README.md wchisp-${{ matrix.config.arch }}
-      shell: bash
-    - uses: actions/upload-artifact@v4
-      with:
-        name: wchisp-${{ matrix.config.arch }}
-        path: wchisp-${{ matrix.config.arch }}
+      - name: Build (cross)
+        if: matrix.cross
+        run: cargo zigbuild --release --target ${{ matrix.target }}
 
-    - name: Prepare Release Asset
-      if: github.event_name == 'release'
-      run: |
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          7z a -tzip wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.zip wchisp-${{ matrix.config.arch }}
-        else
-          tar -czvf wchisp-${{ github.event.release.tag_name }}-${{ matrix.config.arch }}.tar.gz wchisp-${{ matrix.config.arch }}
-        fi
-      shell: bash
-    - name: Upload Release Asset
-      uses: softprops/action-gh-release@v2
-      if: github.event_name == 'release'
-      with:
-        fail_on_unmatched_files: false
-        files: |
-          wchisp-*.tar.gz
-          wchisp-*.zip
+      - name: Run tests
+        if: ${{ !matrix.cross }}
+        run: cargo test --release --target ${{ matrix.target }}
+
+      - name: Run help
+        if: ${{ !matrix.cross }}
+        run: cargo run --release --target ${{ matrix.target }} -- --help
+
+      - name: Prepare artifact
+        shell: bash
+        run: |
+          mkdir -p wchisp-${{ matrix.artifact }}
+          cp target/${{ matrix.target }}/release/wchisp${{ matrix.ext }} wchisp-${{ matrix.artifact }}/
+          cp README.md wchisp-${{ matrix.artifact }}/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wchisp-${{ matrix.artifact }}
+          path: wchisp-${{ matrix.artifact }}
+
+      - name: Create release archive
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a -tzip wchisp-${{ github.event.release.tag_name }}-${{ matrix.artifact }}.zip wchisp-${{ matrix.artifact }}
+          else
+            tar -czvf wchisp-${{ github.event.release.tag_name }}-${{ matrix.artifact }}.tar.gz wchisp-${{ matrix.artifact }}
+          fi
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: false
+          files: |
+            wchisp-*.tar.gz
+            wchisp-*.zip
 
   nightly-release:
+    name: Nightly Release
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
     steps:
-      - name: Download Artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./
 
-      - name: Prepare Nightly Asset
+      - name: Create archives
         run: |
-          ls -R ./
-          for f in wchisp-*; do
-            echo "Compressing $f"
-            if [[ $f == wchisp-win* ]]; then
-              zip -r $f.zip $f
+          for dir in wchisp-*/; do
+            name="${dir%/}"
+            echo "Compressing $name"
+            if [[ $name == wchisp-win* ]]; then
+              zip -r "$name.zip" "$name"
             else
-              tar -czvf $f.tar.gz $f
+              tar -czvf "$name.tar.gz" "$name"
             fi
           done
-          ls ./
 
-      - name: Update Nightly Release
+      - name: Update nightly release
         uses: andelf/nightly-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
