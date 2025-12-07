@@ -24,7 +24,7 @@ impl UsbTransport {
         {
             let devices_ch375 = ch375_driver::list_devices()?;
             let devices_ch375_count = devices_ch375.len();
-            if devices_ch375_count>0{
+            if devices_ch375_count > 0 {
                 //just return the count
                 log::debug!("Found {} CH375USBDevice", devices_ch375_count);
                 return Ok(devices_ch375_count);
