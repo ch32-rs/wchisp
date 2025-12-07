@@ -152,7 +152,7 @@ impl Drop for UsbTransport {
         // ignore any communication error
         if let Some(ref mut handle) = self.device_handle {
             let _ = handle.release_interface(0);
-        }else{
+        } else {
             #[cfg(all(target_os = "windows", target_arch = "x86_64"))]{
                 if self.ch375_index >= 0 {
                     ch375_driver::drop(self.ch375_index as usize);
