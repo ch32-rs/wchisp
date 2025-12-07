@@ -201,42 +201,36 @@ impl Transport for UsbTransport {
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
 pub mod ch375_driver {
     use libloading::os::windows::*;
+    use std::sync::OnceLock;
 
     use super::*;
 
-    static mut CH375_DRIVER: Option<Library> = None;
+    static CH375_DRIVER: OnceLock<Library> = OnceLock::new();
 
     fn ensure_library_load() -> Result<&'static Library> {
-        unsafe {
-            if CH375_DRIVER.is_none() {
-                CH375_DRIVER = Some(
-                    Library::new("CH375DLL64.dll")
-                        .map_err(|_| {
-                            anyhow::Error::msg(
-                                "CH375DLL64.dll not found. \
-                                Please download it from the WCH official website \
-                                and put the dll next to this executable. \
-                                You may download it from https://www.wch-ic.com/downloads/CH372DRV_ZIP.html, \
-                                or search for 'CH375' in the WCH websites if the link is broken."
-                            )
-                        })?,
-                );
-                let lib = CH375_DRIVER.as_ref().unwrap();
-                let get_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
-                    { lib.get(b"CH375GetVersion").unwrap() };
-                let get_driver_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
-                    { lib.get(b"CH375GetDrvVersion").unwrap() };
+        CH375_DRIVER.get_or_try_init(|| {
+            let lib = Library::new("CH375DLL64.dll")
+                .map_err(|_| {
+                    anyhow::Error::msg(
+                        "CH375DLL64.dll not found. \
+                        Please download it from the WCH official website \
+                        and put the dll next to this executable. \
+                        You may download it from https://www.wch-ic.com/downloads/CH372DRV_ZIP.html, \
+                        or search for 'CH375' in the WCH websites if the link is broken."
+                    )
+                })?;
+            let get_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
+                { lib.get(b"CH375GetVersion").unwrap() };
+            let get_driver_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
+                { lib.get(b"CH375GetDrvVersion").unwrap() };
 
-                log::debug!(
-                    "DLL version {}, driver version {}",
-                    get_version(),
-                    get_driver_version()
-                );
-                Ok(lib)
-            } else {
-                Ok(CH375_DRIVER.as_ref().unwrap())
-            }
-        }
+            log::debug!(
+                "DLL version {}, driver version {}",
+                get_version(),
+                get_driver_version()
+            );
+            Ok(lib)
+        })
     }
 
     #[allow(non_snake_case, unused)]
