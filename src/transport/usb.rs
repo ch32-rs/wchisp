@@ -11,7 +11,6 @@ const ENDPOINT_IN: u8 = 0x82;
 
 const USB_TIMEOUT_MS: u64 = 5000;
 
-
 pub struct UsbTransport {
     device_handle: Option<DeviceHandle<rusb::Context>>,
     #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
@@ -24,7 +23,7 @@ impl UsbTransport {
         {
             let devices_ch375 = ch375_driver::list_devices()?;
             let devices_ch375_count = devices_ch375.len();
-            if devices_ch375_count>0{
+            if devices_ch375_count > 0 {
                 //just return the count
                 log::debug!("Found {} CH375USBDevice", devices_ch375_count);
                 return Ok(devices_ch375_count);
@@ -152,8 +151,9 @@ impl Drop for UsbTransport {
         // ignore any communication error
         if let Some(ref mut handle) = self.device_handle {
             let _ = handle.release_interface(0);
-        }else{
-            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]{
+        } else {
+            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+            {
                 if self.ch375_index >= 0 {
                     ch375_driver::drop(self.ch375_index as usize);
                 }
@@ -168,7 +168,8 @@ impl Transport for UsbTransport {
         if let Some(ref mut handle) = self.device_handle {
             handle.write_bulk(ENDPOINT_OUT, raw, Duration::from_millis(USB_TIMEOUT_MS))?;
         } else {
-            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]{
+            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+            {
                 if self.ch375_index >= 0 {
                     //log::debug!("CH375USBDevice index {} send_raw {:?}", self.ch375_index, raw);
                     ch375_driver::write_raw(self.ch375_index as usize, raw)?;
@@ -186,7 +187,8 @@ impl Transport for UsbTransport {
             let nread = handle.read_bulk(ENDPOINT_IN, &mut buf, timeout)?;
             return Ok(buf[..nread].to_vec());
         } else {
-            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]{
+            #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+            {
                 if self.ch375_index >= 0 {
                     let len = ch375_driver::read_raw(self.ch375_index as usize, &mut buf)?;
                     // log::debug!("CH375USBDevice index {} , len {} recv_raw {:?}", self.ch375_index, len, buf);
@@ -201,42 +203,36 @@ impl Transport for UsbTransport {
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
 pub mod ch375_driver {
     use libloading::os::windows::*;
+    use std::sync::OnceLock;
 
     use super::*;
 
-    static mut CH375_DRIVER: Option<Library> = None;
+    static CH375_DRIVER: OnceLock<Library> = OnceLock::new();
 
     fn ensure_library_load() -> Result<&'static Library> {
-        unsafe {
-            if CH375_DRIVER.is_none() {
-                CH375_DRIVER = Some(
-                    Library::new("CH375DLL64.dll")
-                        .map_err(|_| {
-                            anyhow::Error::msg(
-                                "CH375DLL64.dll not found. \
-                                Please download it from the WCH official website \
-                                and put the dll next to this executable. \
-                                You may download it from https://www.wch-ic.com/downloads/CH372DRV_ZIP.html, \
-                                or search for 'CH375' in the WCH websites if the link is broken."
-                            )
-                        })?,
-                );
-                let lib = CH375_DRIVER.as_ref().unwrap();
-                let get_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
-                    { lib.get(b"CH375GetVersion").unwrap() };
-                let get_driver_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
-                    { lib.get(b"CH375GetDrvVersion").unwrap() };
+        CH375_DRIVER.get_or_try_init(|| {
+            let lib = Library::new("CH375DLL64.dll")
+                .map_err(|_| {
+                    anyhow::Error::msg(
+                        "CH375DLL64.dll not found. \
+                        Please download it from the WCH official website \
+                        and put the dll next to this executable. \
+                        You may download it from https://www.wch-ic.com/downloads/CH372DRV_ZIP.html, \
+                        or search for 'CH375' in the WCH websites if the link is broken."
+                    )
+                })?;
+            let get_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
+                { lib.get(b"CH375GetVersion").unwrap() };
+            let get_driver_version: Symbol<unsafe extern "stdcall" fn() -> u32> =
+                { lib.get(b"CH375GetDrvVersion").unwrap() };
 
-                log::debug!(
-                    "DLL version {}, driver version {}",
-                    get_version(),
-                    get_driver_version()
-                );
-                Ok(lib)
-            } else {
-                Ok(CH375_DRIVER.as_ref().unwrap())
-            }
-        }
+            log::debug!(
+                "DLL version {}, driver version {}",
+                get_version(),
+                get_driver_version()
+            );
+            Ok(lib)
+        })
     }
 
     #[allow(non_snake_case, unused)]
@@ -307,7 +303,7 @@ pub mod ch375_driver {
         let get_device_descriptor: Symbol<
             unsafe extern "stdcall" fn(u32, *mut UsbDeviceDescriptor, *mut u32) -> bool,
         > = unsafe { lib.get(b"CH375GetDeviceDescr").unwrap() };
-        
+
         const INVALID_HANDLE: u32 = 0xffffffff;
 
         let mut idx = 0;
@@ -321,9 +317,7 @@ pub mod ch375_driver {
                 let id_vendor = descr.idVendor;
                 let id_product = descr.idProduct;
 
-                if (id_vendor == 0x4348 || id_vendor == 0x1a86)
-                    && id_product == 0x55e0
-                {
+                if (id_vendor == 0x4348 || id_vendor == 0x1a86) && id_product == 0x55e0 {
                     if idx == nth {
                         log::debug!("Device #{}: {:04x}:{:04x}", i, id_vendor, id_product);
                         return Ok(i as isize);
@@ -337,17 +331,14 @@ pub mod ch375_driver {
 
         return Ok(-1 as isize);
     }
-    
+
     pub fn write_raw(nth: usize, buf: &[u8]) -> Result<()> {
         let lib = ensure_library_load()?;
-        let write_data: Symbol<
-            unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool,
-        > = unsafe { lib.get(b"CH375WriteData").unwrap() };
+        let write_data: Symbol<unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool> =
+            unsafe { lib.get(b"CH375WriteData").unwrap() };
 
         let mut len = buf.len() as u32;
-        let ret = unsafe {
-            write_data(nth as u32, buf.as_ptr() as *mut u8, &mut len)
-        };
+        let ret = unsafe { write_data(nth as u32, buf.as_ptr() as *mut u8, &mut len) };
         if ret {
             Ok(())
         } else {
@@ -357,14 +348,11 @@ pub mod ch375_driver {
 
     pub fn read_raw(nth: usize, buf: &mut [u8]) -> Result<usize> {
         let lib = ensure_library_load()?;
-        let read_data: Symbol<
-            unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool,
-        > = unsafe { lib.get(b"CH375ReadData").unwrap() };
+        let read_data: Symbol<unsafe extern "stdcall" fn(u32, *mut u8, *mut u32) -> bool> =
+            unsafe { lib.get(b"CH375ReadData").unwrap() };
 
         let mut len = buf.len() as u32;
-        let ret = unsafe {
-            read_data(nth as u32, buf.as_mut_ptr(), &mut len)
-        };
+        let ret = unsafe { read_data(nth as u32, buf.as_mut_ptr(), &mut len) };
         if ret {
             Ok(len as usize)
         } else {
@@ -375,9 +363,8 @@ pub mod ch375_driver {
     pub fn set_timeout(nth: usize, timeout: Duration) {
         let lib = ensure_library_load().unwrap();
 
-        let set_timeout_ex: Symbol<
-            unsafe extern "stdcall" fn(u32, u32, u32, u32, u32) -> bool,
-        > = unsafe { lib.get(b"CH375SetTimeoutEx").unwrap() };
+        let set_timeout_ex: Symbol<unsafe extern "stdcall" fn(u32, u32, u32, u32, u32) -> bool> =
+            unsafe { lib.get(b"CH375SetTimeoutEx").unwrap() };
 
         let ds = timeout.as_millis() as u32;
 
