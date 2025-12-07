@@ -2,17 +2,25 @@
 use std::time::Duration;
 
 use anyhow::Result;
-use rusb::{Context, DeviceHandle, UsbContext};
+use nusb::transfer::RequestBuffer;
 
 use super::Transport;
 
 const ENDPOINT_OUT: u8 = 0x02;
 const ENDPOINT_IN: u8 = 0x82;
 
+#[allow(dead_code)]
 const USB_TIMEOUT_MS: u64 = 5000;
 
+/// Check if a device matches WCH ISP VID/PID
+fn is_wch_isp_device(info: &nusb::DeviceInfo) -> bool {
+    let vid = info.vendor_id();
+    let pid = info.product_id();
+    (vid == 0x4348 || vid == 0x1a86) && pid == 0x55e0
+}
+
 pub struct UsbTransport {
-    device_handle: Option<DeviceHandle<rusb::Context>>,
+    interface: Option<nusb::Interface>,
     #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
     ch375_index: isize,
 }
@@ -24,29 +32,21 @@ impl UsbTransport {
             let devices_ch375 = ch375_driver::list_devices()?;
             let devices_ch375_count = devices_ch375.len();
             if devices_ch375_count > 0 {
-                //just return the count
                 log::debug!("Found {} CH375USBDevice", devices_ch375_count);
                 return Ok(devices_ch375_count);
             }
         }
 
-        let context = Context::new()?;
-
-        let n = context
-            .devices()?
-            .iter()
-            .filter(|device| {
-                device
-                    .device_descriptor()
-                    .map(|desc| {
-                        (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
-                            && desc.product_id() == 0x55e0
-                    })
-                    .unwrap_or(false)
-            })
+        let n = nusb::list_devices()?
+            .filter(is_wch_isp_device)
             .enumerate()
             .map(|(i, device)| {
-                log::debug!("Found WCH ISP USB device #{}: [{:?}]", i, device);
+                log::debug!(
+                    "Found WCH ISP USB device #{}: {:04x}:{:04x}",
+                    i,
+                    device.vendor_id(),
+                    device.product_id()
+                );
             })
             .count();
         Ok(n)
@@ -60,64 +60,52 @@ impl UsbTransport {
             let ch375_index = ch375_driver::open_nth(nth)?;
             if ch375_index >= 0 {
                 return Ok(UsbTransport {
-                    device_handle: None,
+                    interface: None,
                     ch375_index,
                 });
             }
         }
 
-        let context = Context::new()?;
-
-        let device = context
-            .devices()?
-            .iter()
-            .filter(|device| {
-                device
-                    .device_descriptor()
-                    .map(|desc| {
-                        (desc.vendor_id() == 0x4348 || desc.vendor_id() == 0x1a86)
-                            && desc.product_id() == 0x55e0
-                    })
-                    .unwrap_or(false)
-            })
+        let device_info = nusb::list_devices()?
+            .filter(is_wch_isp_device)
             .nth(nth)
-            .ok_or(anyhow::format_err!(
-                "No WCH ISP USB device found(4348:55e0 or 1a86:55e0 device not found at index #{})",
-                nth
-            ))?;
-        log::debug!("Found USB Device {:?}", device);
+            .ok_or_else(|| {
+                anyhow::format_err!(
+                    "No WCH ISP USB device found (4348:55e0 or 1a86:55e0 device not found at index #{})",
+                    nth
+                )
+            })?;
 
-        let device_handle = match device.open() {
-            Ok(handle) => handle,
+        log::debug!(
+            "Found USB Device {:04x}:{:04x}",
+            device_info.vendor_id(),
+            device_info.product_id()
+        );
+
+        let device = device_info.open().map_err(|e| {
+            log::error!("Failed to open USB device: {}", e);
             #[cfg(target_os = "windows")]
-            Err(rusb::Error::NotSupported) => {
-                log::error!("Failed to open USB device: {:?}", device);
-                log::warn!("It's likely no WinUSB/LibUSB drivers installed. Please install it from Zadig. See also: https://zadig.akeo.ie");
-                anyhow::bail!("Failed to open USB device on Windows");
-            }
+            log::warn!("It's likely no WinUSB driver installed. Please install it from Zadig. See also: https://zadig.akeo.ie");
             #[cfg(target_os = "linux")]
-            Err(rusb::Error::Access) => {
-                log::error!("Failed to open USB device: {:?}", device);
-                log::warn!("It's likely the udev rules is not installed properly. Please refer to README.md for more details.");
-                anyhow::bail!("Failed to open USB device on Linux due to no enough permission");
-            }
-            Err(e) => {
-                log::error!("Failed to open USB device: {}", e);
-                anyhow::bail!("Failed to open USB device");
-            }
-        };
+            log::warn!("It's likely the udev rules are not installed properly. Please refer to README.md for more details.");
+            anyhow::anyhow!("Failed to open USB device: {}", e)
+        })?;
 
-        let config = device.config_descriptor(0)?;
+        // Verify endpoints exist by checking active configuration
+        let active_config = device.active_configuration().map_err(|e| {
+            anyhow::anyhow!("Failed to get active configuration: {}", e)
+        })?;
 
         let mut endpoint_out_found = false;
         let mut endpoint_in_found = false;
-        if let Some(intf) = config.interfaces().next() {
-            if let Some(desc) = intf.descriptors().next() {
-                for endpoint in desc.endpoint_descriptors() {
-                    if endpoint.address() == ENDPOINT_OUT {
+
+        for iface in active_config.interfaces() {
+            for alt in iface.alt_settings() {
+                for ep in alt.endpoints() {
+                    if ep.address() == ENDPOINT_OUT {
                         endpoint_out_found = true;
                     }
-                    if endpoint.address() == ENDPOINT_IN {
+                    if ep.address() == ENDPOINT_IN {
                         endpoint_in_found = true;
                     }
                 }
@@ -128,14 +116,13 @@ impl UsbTransport {
             anyhow::bail!("USB Endpoints not found");
         }
 
-        device_handle.set_active_configuration(1)?;
-        let _config = device.active_config_descriptor()?;
-        let _descriptor = device.device_descriptor()?;
-
-        device_handle.claim_interface(0)?;
+        let interface = device.claim_interface(0).map_err(|e| {
+            log::error!("Failed to claim interface: {}", e);
+            anyhow::anyhow!("Failed to claim USB interface: {}", e)
+        })?;
 
         Ok(UsbTransport {
-            device_handle: Some(device_handle),
+            interface: Some(interface),
             #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
             ch375_index: -1,
         })
@@ -148,10 +135,8 @@ impl UsbTransport {
 
 impl Drop for UsbTransport {
     fn drop(&mut self) {
-        // ignore any communication error
-        if let Some(ref mut handle) = self.device_handle {
-            let _ = handle.release_interface(0);
-        } else {
+        // nusb Interface is automatically released on drop
+        if self.interface.is_none() {
             #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
             {
                 if self.ch375_index >= 0 {
@@ -159,19 +144,19 @@ impl Drop for UsbTransport {
                 }
             }
         }
-        // self.device_handle.reset().unwrap();
     }
 }
 
 impl Transport for UsbTransport {
     fn send_raw(&mut self, raw: &[u8]) -> Result<()> {
-        if let Some(ref mut handle) = self.device_handle {
-            handle.write_bulk(ENDPOINT_OUT, raw, Duration::from_millis(USB_TIMEOUT_MS))?;
+        if let Some(ref interface) = self.interface {
+            let fut = interface.bulk_out(ENDPOINT_OUT, raw.to_vec());
+            let completion = futures_lite::future::block_on(fut);
+            completion.status.map_err(|e| anyhow::anyhow!("USB write error: {}", e))?;
         } else {
             #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
             {
                 if self.ch375_index >= 0 {
-                    //log::debug!("CH375USBDevice index {} send_raw {:?}", self.ch375_index, raw);
                     ch375_driver::write_raw(self.ch375_index as usize, raw)?;
                     return Ok(());
                 }
@@ -182,21 +167,39 @@ impl Transport for UsbTransport {
     }
 
     fn recv_raw(&mut self, timeout: Duration) -> Result<Vec<u8>> {
-        let mut buf = [0u8; 64];
-        if let Some(ref mut handle) = self.device_handle {
-            let nread = handle.read_bulk(ENDPOINT_IN, &mut buf, timeout)?;
-            return Ok(buf[..nread].to_vec());
+        if let Some(ref interface) = self.interface {
+            let fut = interface.bulk_in(ENDPOINT_IN, RequestBuffer::new(64));
+            let result = futures_lite::future::block_on(async {
+                let timeout_fut = async_io::Timer::after(timeout);
+                futures_lite::future::or(
+                    async { Some(fut.await) },
+                    async {
+                        timeout_fut.await;
+                        None
+                    },
+                )
+                .await
+            });
+            match result {
+                Some(completion) => {
+                    completion
+                        .status
+                        .map_err(|e| anyhow::anyhow!("USB read error: {}", e))?;
+                    Ok(completion.data.into())
+                }
+                None => anyhow::bail!("USB read timeout"),
+            }
         } else {
             #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
             {
                 if self.ch375_index >= 0 {
+                    let mut buf = [0u8; 64];
                     let len = ch375_driver::read_raw(self.ch375_index as usize, &mut buf)?;
-                    // log::debug!("CH375USBDevice index {} , len {} recv_raw {:?}", self.ch375_index, len, buf);
                     return Ok(buf[..len].to_vec());
                 }
             }
+            anyhow::bail!("USB device handle is None while ch375_index is negative or not set");
         }
-        anyhow::bail!("USB device handle is None while ch375_index is negative or not set");
     }
 }
 
@@ -332,7 +335,7 @@ pub mod ch375_driver {
             }
         }
 
-        return Ok(-1 as isize);
+        Ok(-1_isize)
     }
 
     pub fn write_raw(nth: usize, buf: &[u8]) -> Result<()> {
@@ -363,6 +366,7 @@ pub mod ch375_driver {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_timeout(nth: usize, timeout: Duration) {
         let lib = ensure_library_load().unwrap();
 
