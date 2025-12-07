@@ -291,7 +291,7 @@ fn main() -> Result<()> {
                     log::info!("EEPROM data size: {}", eeprom.len());
 
                     if let Some(EepromCommands::Dump {
-                        path: Some(ref path),
+                        path: Some(path),
                     }) = command
                     {
                         std::fs::write(path, eeprom)?;
