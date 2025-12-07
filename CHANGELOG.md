@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `--retry` flag for slow bootloader detection
 - Windows: Support CH375DLL64.dll driver as alternative to WinUSB (x64 only)
 
+### Removed
+
+- Drop prebuilt macOS x64 (Intel) binaries; users on Intel Macs need to build from source
+
 ## [0.2.2] - 2023-10-03
 
 ### Added
