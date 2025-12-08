@@ -20,7 +20,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1.0"
-nusb = "0.1"
+nusb = "0.2"
 bitfield = "0.19.4"
 scroll = "0.13.0"
 simplelog = "0.12"
@@ -33,7 +33,5 @@ object = { version = "0.38.0", default-features = false, features = [
     "std",
 ] }
 indicatif = "0.18.3"
-serialport = { version = "4.5", default-features = false }
+serialport = { version = "4.7", default-features = false }
 libloading = "0.9.0"
-futures-lite = "2.6.1"
-async-io = "2.6.0"

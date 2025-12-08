@@ -1,8 +1,10 @@
 //! USB Transportation.
+use std::io::{Read, Write};
 use std::time::Duration;
 
 use anyhow::Result;
-use nusb::transfer::RequestBuffer;
+use nusb::transfer::{Bulk, In, Out};
+use nusb::MaybeFuture;
 
 use super::Transport;
 
@@ -37,7 +39,8 @@ impl UsbTransport {
             }
         }
 
-        let n = nusb::list_devices()?
+        let n = nusb::list_devices()
+            .wait()?
             .filter(is_wch_isp_device)
             .enumerate()
             .map(|(i, device)| {
@@ -66,7 +69,8 @@ impl UsbTransport {
             }
         }
 
-        let device_info = nusb::list_devices()?
+        let device_info = nusb::list_devices()
+            .wait()?
             .filter(is_wch_isp_device)
             .nth(nth)
             .ok_or_else(|| {
@@ -82,7 +86,7 @@ impl UsbTransport {
             device_info.product_id()
         );
 
-        let device = device_info.open().map_err(|e| {
+        let device = device_info.open().wait().map_err(|e| {
             log::error!("Failed to open USB device: {}", e);
             #[cfg(target_os = "windows")]
             log::warn!("It's likely no WinUSB driver installed. Please install it from Zadig. See also: https://zadig.akeo.ie");
@@ -91,32 +95,7 @@ impl UsbTransport {
             anyhow::anyhow!("Failed to open USB device: {}", e)
         })?;
 
-        // Verify endpoints exist by checking active configuration
-        let active_config = device.active_configuration().map_err(|e| {
-            anyhow::anyhow!("Failed to get active configuration: {}", e)
-        })?;
-
-        let mut endpoint_out_found = false;
-        let mut endpoint_in_found = false;
-
-        for iface in active_config.interfaces() {
-            for alt in iface.alt_settings() {
-                for ep in alt.endpoints() {
-                    if ep.address() == ENDPOINT_OUT {
-                        endpoint_out_found = true;
-                    }
-                    if ep.address() == ENDPOINT_IN {
-                        endpoint_in_found = true;
-                    }
-                }
-            }
-        }
-
-        if !(endpoint_out_found && endpoint_in_found) {
-            anyhow::bail!("USB Endpoints not found");
-        }
-
-        let interface = device.claim_interface(0).map_err(|e| {
+        let interface = device.claim_interface(0).wait().map_err(|e| {
             log::error!("Failed to claim interface: {}", e);
             anyhow::anyhow!("Failed to claim USB interface: {}", e)
         })?;
@@ -150,9 +129,12 @@ impl Drop for UsbTransport {
 impl Transport for UsbTransport {
     fn send_raw(&mut self, raw: &[u8]) -> Result<()> {
         if let Some(ref interface) = self.interface {
-            let fut = interface.bulk_out(ENDPOINT_OUT, raw.to_vec());
-            let completion = futures_lite::future::block_on(fut);
-            completion.status.map_err(|e| anyhow::anyhow!("USB write error: {}", e))?;
+            let endpoint = interface
+                .endpoint::<Bulk, Out>(ENDPOINT_OUT)
+                .map_err(|e| anyhow::anyhow!("Failed to get OUT endpoint: {}", e))?;
+            let mut writer = endpoint.writer(64);
+            writer.write_all(raw)?;
+            writer.flush()?;
         } else {
             #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
             {
@@ -166,29 +148,15 @@ impl Transport for UsbTransport {
         Ok(())
     }
 
-    fn recv_raw(&mut self, timeout: Duration) -> Result<Vec<u8>> {
+    fn recv_raw(&mut self, _timeout: Duration) -> Result<Vec<u8>> {
         if let Some(ref interface) = self.interface {
-            let fut = interface.bulk_in(ENDPOINT_IN, RequestBuffer::new(64));
-            let result = futures_lite::future::block_on(async {
-                let timeout_fut = async_io::Timer::after(timeout);
-                futures_lite::future::or(
-                    async { Some(fut.await) },
-                    async {
-                        timeout_fut.await;
-                        None
-                    },
-                )
-                .await
-            });
-            match result {
-                Some(completion) => {
-                    completion
-                        .status
-                        .map_err(|e| anyhow::anyhow!("USB read error: {}", e))?;
-                    Ok(completion.data.into())
-                }
-                None => anyhow::bail!("USB read timeout"),
-            }
+            let endpoint = interface
+                .endpoint::<Bulk, In>(ENDPOINT_IN)
+                .map_err(|e| anyhow::anyhow!("Failed to get IN endpoint: {}", e))?;
+            let mut reader = endpoint.reader(64);
+            let mut buf = [0u8; 64];
+            let n = reader.read(&mut buf)?;
+            Ok(buf[..n].to_vec())
         } else {
             #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
             {
