@@ -71,6 +71,6 @@ variants:
   - name: CH32V317WCU6
     chip_id: 0x73
     flash_size: 256K
-  - name: CH32V307VCT6
+  - name: CH32V317VCT6
     chip_id: 0x70
     flash_size: 256K
