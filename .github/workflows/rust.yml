@@ -155,6 +155,9 @@ jobs:
           name: "wchisp nightly release $$"
           draft: false
           prerelease: true
+          # Skip republishing when the nightly tag is already at HEAD — avoids
+          # spamming watchers with empty re-releases on cron runs.
+          only-when-changed: true
           body: |
             This is a nightly binary release of the wchisp command line tool.
           files: |
