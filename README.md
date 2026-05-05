@@ -111,6 +111,8 @@ This tool should work on most WCH MCU chips. But I haven't tested it on any othe
 - [x] CH32V307
   - VCT6
   - RCT6 #8
+- [x] CH32V305
+  - RBT6
 - [x] CH32V103
 - [x] CH32F103
 - [x] CH549
