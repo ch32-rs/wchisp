@@ -314,17 +314,18 @@ impl Response {
     }
 
     pub(crate) fn from_raw(raw: &[u8]) -> Result<Self> {
-        // FIXME: should raw[1] == 0x00 || raw[1] == 0x82?
-        if true {
-            let len = raw.pread_with::<u16>(2, scroll::LE)? as usize;
-            let remain = &raw[4..];
-            if remain.len() == len {
-                Ok(Response::Ok(remain.to_vec()))
-            } else {
-                Err(anyhow::anyhow!("Invalid response"))
-            }
-        } else {
-            Ok(Response::Err(raw[1], raw[2..].to_vec()))
+        // Response layout: [cmd][status][len_lo][len_hi][payload...]. The status
+        // byte must be honored: previously the parser unconditionally returned
+        // Response::Ok for any correctly-framed response, masking error replies.
+        // 0x00 = ok; 0x82 has been observed as ok-with-data on some reads.
+        anyhow::ensure!(raw.len() >= 4, "Response too short");
+        let status = raw[1];
+        let len = raw.pread_with::<u16>(2, scroll::LE)? as usize;
+        let remain = &raw[4..];
+        anyhow::ensure!(remain.len() == len, "Invalid response");
+        match status {
+            0x00 | 0x82 => Ok(Response::Ok(remain.to_vec())),
+            code => Ok(Response::Err(code, remain.to_vec())),
         }
     }
 }
