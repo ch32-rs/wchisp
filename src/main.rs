@@ -99,9 +99,12 @@ enum ConfigCommands {
     EnableDebug {},
     /// Disable SWD mode(simulation mode)
     DisableDebug {},
-    /// Set config register to new value
+    /// Set the RDPR/USER/DATA/WPR config registers to a raw value. The value is
+    /// the full config block as hex -- the same string `config info` prints as
+    /// "Current config registers" -- written back verbatim. Read it, change the
+    /// bytes you need, write it back.
     Set {
-        /// New value of the config register
+        /// New config block, as hex (optionally `0x`-prefixed)
         #[arg(value_name = "HEX")]
         value: String,
     },
@@ -358,9 +361,7 @@ fn main() -> Result<()> {
                     log::info!("Debug mode disabled");
                 }
                 Some(ConfigCommands::Set { value }) => {
-                    // flashing.write_config(value)?;
-                    log::info!("setting cfg value {}", value);
-                    unimplemented!()
+                    flashing.set_config(value)?;
                 }
                 Some(ConfigCommands::Unprotect {}) => {
                     flashing.unprotect(true)?;
