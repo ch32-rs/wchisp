@@ -428,6 +428,16 @@ impl<'a> Flashing<'a> {
             .transport
             .transfer_with_wait(cmd, Duration::from_millis(300))?;
         anyhow::ensure!(resp.is_ok(), "program 0x{:08x} failed", address);
+        // The per-chunk Program result is carried in the response payload
+        // (payload[0]): 0x00 = ok, non-zero = rejected by the BootROM. Without
+        // this check a rejected Program is silently reported as a successful flash.
+        let status = resp.payload().first().copied().unwrap_or(0xff);
+        anyhow::ensure!(
+            status == 0x00,
+            "program 0x{:08x} rejected by BootROM (status 0x{:02x})",
+            address,
+            status
+        );
         Ok(())
     }
 
