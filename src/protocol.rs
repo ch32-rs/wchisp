@@ -322,7 +322,12 @@ impl Response {
         let status = raw[1];
         let len = raw.pread_with::<u16>(2, scroll::LE)? as usize;
         let remain = &raw[4..];
-        anyhow::ensure!(remain.len() == len, "Invalid response");
+        anyhow::ensure!(
+            remain.len() == len,
+            "Invalid response: expected payload len {}, got {}",
+            len,
+            remain.len()
+        );
         match status {
             0x00 | 0x82 => Ok(Response::Ok(remain.to_vec())),
             code => Ok(Response::Err(code, remain.to_vec())),
