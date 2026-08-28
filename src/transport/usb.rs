@@ -128,7 +128,12 @@ impl UsbTransport {
             anyhow::bail!("USB Endpoints not found");
         }
 
-        device_handle.set_active_configuration(1)?;
+        // Re-applying the already active configuration can reset or stall a
+        // freshly enumerated ISP endpoint on macOS. Configure only when the
+        // device is not already using configuration 1.
+        if device_handle.active_configuration()? != 1 {
+            device_handle.set_active_configuration(1)?;
+        }
         let _config = device.active_config_descriptor()?;
         let _descriptor = device.device_descriptor()?;
 

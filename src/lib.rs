@@ -1,5 +1,6 @@
 //! WCH ISP Protocol implementation.
 
+pub mod ch585;
 pub mod constants;
 pub mod device;
 pub mod flashing;
