@@ -98,6 +98,25 @@ WRP: 0xFFFFFFFF
 > wchisp config reset
 ```
 
+### Waiting for the bootloader
+
+Some parts only expose the ISP bootloader for a few seconds after it is
+triggered (e.g. by a BOOT button or a software reset into ISP mode). Start
+`wchisp` with `-w`/`--wait` first; it will poll until the bootloader enumerates,
+then immediately run the requested command:
+
+```console
+> wchisp --wait flash ./path/to/firmware.bin
+14:51:20 [INFO] Waiting for the bootloader to enumerate (Ctrl-C to abort)...
+# ... now trigger the bootloader on the target ...
+14:51:24 [INFO] Bootloader detected
+14:51:24 [INFO] Opening USB device #0
+```
+
+`--wait` works with both USB and serial (`--serial --port ...`) transports and
+respects `--device`/`--port`. Use `-r`/`--retry <SECONDS>` instead for a bounded
+wait.
+
 ### CH32V00x Notes
 
 The CH32V00x series **DOES NOT** have a USB ISP interface; it can only be accessed via UART. Use `-s` or `--serial` command-line option to specify serial transport, and `-p` or `--port` option to specify COM/TTY port.

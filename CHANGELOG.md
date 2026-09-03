@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add CH570/CH572 support
 - Add `disable-debug` subcommand for disabling SWD/debug mode
 - Add `--retry` flag for slow bootloader detection
+- Add `--wait` flag to poll until the bootloader enumerates, for parts whose bootloader is only present for a few seconds
 - Windows: Support CH375DLL64.dll driver as alternative to WinUSB (x64 only)
 
 ### Removed
