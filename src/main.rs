@@ -241,7 +241,7 @@ fn main() -> Result<()> {
                 log::warn!("Skipping erase");
             } else {
                 log::info!("Erasing...");
-                let sectors = binary.len() / (flashing.chip.sector_size as usize) + 1;
+                let sectors = binary.len().div_ceil(flashing.chip.sector_size as usize);
                 flashing.erase_code(sectors as u32)?;
 
                 sleep(Duration::from_secs(1));
