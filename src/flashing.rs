@@ -18,7 +18,7 @@ pub struct Flashing<'a> {
     /// Chip unique identifier
     chip_uid: Vec<u8>,
     // BTVER
-    bootloader_version: [u8; 4],
+    bootloader_version: u32,
     code_flash_protected: bool,
 }
 
@@ -66,7 +66,7 @@ impl<'a> Flashing<'a> {
             transport: Box::new(transport),
             chip,
             chip_uid,
-            bootloader_version: btver,
+            bootloader_version: u32::from_be_bytes(btver),
             code_flash_protected,
         };
         f.check_chip_uid()?;
@@ -157,12 +157,9 @@ impl<'a> Flashing<'a> {
                 .join("-")
         );
         log::info!(
-            "BTVER(bootloader ver): {:x}{:x}.{:x}{:x}",
-            self.bootloader_version[0],
-            self.bootloader_version[1],
-            self.bootloader_version[2],
-            self.bootloader_version[3]
-        );
+            "BTVER(bootloader ver): {:x}.{:x}",
+            self.bootloader_version >> 16,
+            self.bootloader_version & 0xFFFF);
 
         if self.chip.support_code_flash_protect() {
             log::info!("Code Flash protected: {}", self.code_flash_protected);
@@ -548,7 +545,7 @@ impl<'a> Flashing<'a> {
 
     pub fn chip_uid(&self) -> &[u8] {
         let uid_size = self.chip.uid_size();
-        //if self.bootloader_version < [0, 2, 4, 0] {
+        //if self.bootloader_version < 0x00020400 {
         //    uid_size = 4
         //}
         &self.chip_uid[..uid_size]
