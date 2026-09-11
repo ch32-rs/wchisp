@@ -6,7 +6,7 @@ use indicatif::ProgressBar;
 use scroll::{Pread, Pwrite, LE};
 
 use crate::{
-    constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
+    constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR, DEFAULT_SECTOR_SIZE},
     device::{parse_number, ChipDB},
     transport::{SerialTransport, UsbTransport},
     Baudrate, Chip, Command, Transport,
@@ -144,6 +144,9 @@ impl<'a> Flashing<'a> {
                 self.chip,
                 self.chip.flash_size / 1024,
             );
+        }
+        if self.chip.sector_size != DEFAULT_SECTOR_SIZE {
+            log::info!("Sector size: {}", self.chip.sector_size);
         }
         log::info!(
             "Chip UID: {}",
@@ -476,7 +479,7 @@ impl<'a> Flashing<'a> {
         if self.chip.eeprom_size == 0 {
             anyhow::bail!("chip doesn't support data EEPROM");
         }
-        let sectors = (self.chip.eeprom_size / 1024).max(1) as u16;
+        let sectors = (self.chip.eeprom_size / self.chip.sector_size).max(1) as u16;
         let erase = Command::data_erase(sectors as _);
         let resp = self
             .transport
