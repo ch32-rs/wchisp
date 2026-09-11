@@ -207,7 +207,7 @@ impl<'a> Flashing<'a> {
     /// Program the code flash.
     pub fn flash(&mut self, raw: &[u8]) -> Result<()> {
         let key = self.xor_key();
-        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        let key_checksum = self.calc_key_checksum(key);
 
         // NOTE: use all-zero key seed for now.
         let isp_key = Command::isp_key(vec![0; 0x1e]);
@@ -235,7 +235,7 @@ impl<'a> Flashing<'a> {
 
     pub fn write_eeprom(&mut self, raw: &[u8]) -> Result<()> {
         let key = self.xor_key();
-        // let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        // let key_checksum = self.calc_key_checksum(key);
 
         // NOTE: use all-zero key seed for now.
         let isp_key = Command::isp_key(vec![0; 0x1e]);
@@ -261,7 +261,7 @@ impl<'a> Flashing<'a> {
 
     pub fn verify(&mut self, raw: &[u8]) -> Result<()> {
         let key = self.xor_key();
-        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        let key_checksum = self.calc_key_checksum(key);
         // NOTE: use all-zero key seed for now.
         let isp_key = Command::isp_key(vec![0; 0x1e]);
         let resp = self.transport.transfer(isp_key)?;
@@ -541,6 +541,16 @@ impl<'a> Flashing<'a> {
         key.last_mut()
             .map(|x| *x = x.overflowing_add(self.chip.chip_id).0);
         key
+    }
+
+    fn calc_key_checksum(&self, key: [u8; 8]) -> u8 {
+        // If the bootloader version is 2.7 or later, 0 will be always sent by the device.
+        if self.bootloader_version >= 0x00020700 {
+            0
+        } else {
+            let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+            key_checksum
+        }
     }
 
     pub fn chip_uid(&self) -> &[u8] {
