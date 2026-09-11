@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
+use crate::constants::DEFAULT_SECTOR_SIZE;
+
 /// MCU Family
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChipFamily {
@@ -45,6 +47,8 @@ pub struct Chip {
     #[serde(default)]
     pub device_type: u8,
 
+    #[serde(default = "default_sector_size")]
+    pub sector_size: u32,
     #[serde(deserialize_with = "parse_address_and_offset")]
     pub flash_size: u32,
     #[serde(default, deserialize_with = "parse_address_and_offset")]
@@ -297,4 +301,8 @@ pub fn parse_number(s: &str) -> Option<u32> {
     } else {
         Some(s.parse().expect("must be a number"))
     }
+}
+
+fn default_sector_size() -> u32 {
+    DEFAULT_SECTOR_SIZE
 }

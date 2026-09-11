@@ -97,6 +97,7 @@ variants:
   # use 0x42 to probe
   - name: CH563
     chip_id: 0x63
+    sector_size: 256
     # 0x45 for CH563_E?
     alt_chip_ids: [0x42, 0x43, 0x44, 0x45]
     flash_size: 224K
@@ -106,6 +107,7 @@ variants:
 
   - name: CH565
     chip_id: 0x65
+    sector_size: 256
     flash_size: 448K
     eeprom_size: 32K
     support_usb: true
@@ -115,6 +117,7 @@ variants:
 
   - name: CH566
     chip_id: 0x66
+    sector_size: 256
     flash_size: 64K
     eeprom_size: 32K
     support_usb: true
@@ -123,6 +126,7 @@ variants:
 
   - name: CH567
     chip_id: 0x67
+    sector_size: 256
     flash_size: 192K
     eeprom_size: 32K
     support_usb: true
@@ -130,6 +134,7 @@ variants:
 
   - name: CH568
     chip_id: 0x68
+    sector_size: 256
     flash_size: 192K
     eeprom_size: 32K
     support_usb: true
@@ -137,6 +142,7 @@ variants:
 
   - name: CH569
     chip_id: 0x69
+    sector_size: 256
     flash_size: 448K
     eeprom_size: 32K
     support_usb: true
