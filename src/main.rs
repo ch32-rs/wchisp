@@ -358,9 +358,8 @@ fn main() -> Result<()> {
                     log::info!("Debug mode disabled");
                 }
                 Some(ConfigCommands::Set { value }) => {
-                    // flashing.write_config(value)?;
+                    flashing.write_config(value)?;
                     log::info!("setting cfg value {}", value);
-                    unimplemented!()
                 }
                 Some(ConfigCommands::Unprotect {}) => {
                     flashing.unprotect(true)?;

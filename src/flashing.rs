@@ -309,6 +309,52 @@ impl<'a> Flashing<'a> {
         Ok(())
     }
 
+    pub fn write_config(&mut self, value: &str) -> Result<()> {
+        // 1. Read the current configuration
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        let mut raw = resp.payload()[2..].to_vec();
+        log::info!("Current config registers: {}", hex::encode(&raw));
+
+        // 2. Parse input value in u32
+        let parsed_val = if let Some(stripped) = value.strip_prefix("0x") {
+            u32::from_str_radix(stripped, 16)
+        } else {
+            u32::from_str_radix(value, 16)
+        }.map_err(|e| anyhow::anyhow!("Invalid hex/u32 value '{}': {}", value, e))?;
+
+        // 3. Safely updating the buffer via pwrite_with
+        let mut updated = false;
+        for reg_desc in &self.chip.config_registers {
+            if reg_desc.offset == 0 { 
+                raw.pwrite_with(parsed_val, reg_desc.offset, scroll::LE)?;
+                updated = true;
+                log::info!("Updated register at offset {}", reg_desc.offset);
+                break;
+            }
+        }
+
+        if !updated {
+            raw.pwrite_with(parsed_val, 0, scroll::LE)?;
+        }
+
+        log::info!("Writing updated config registers: {}", hex::encode(&raw));
+
+        // 4. Sending a recording command
+        let write_conf = Command::write_config(CFG_MASK_RDPR_USER_DATA_WPR, raw);
+        let resp = self.transport.transfer(write_conf)?;
+        anyhow::ensure!(resp.is_ok(), "write_config failed");
+
+        // 5. Secure verification (Read back)
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        Ok(())
+    }
+
     pub fn enable_debug(&mut self) -> Result<()> {
         let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
         let resp = self.transport.transfer(read_conf)?;
