@@ -233,16 +233,46 @@ fn main() -> Result<()> {
             let mut flashing = get_flashing(&cli)?;
 
             flashing.dump_info()?;
+            let is_ch585 = flashing.chip.name == "CH585";
+            if is_ch585 && *no_verify {
+                anyhow::bail!(
+                    "CH585 flashing requires full verification before its debug configuration can be restored"
+                );
+            }
 
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
-            extend_firmware_to_sector_boundary(&mut binary);
+            if is_ch585 {
+                wchisp::ch585::pad_firmware(&mut binary);
+            } else {
+                extend_firmware_to_sector_boundary(&mut binary);
+            }
+            anyhow::ensure!(!binary.is_empty(), "firmware image is empty");
+            anyhow::ensure!(
+                binary.len() <= flashing.chip.flash_size as usize,
+                "firmware image is {} bytes but {} code flash is {} bytes",
+                binary.len(),
+                flashing.chip.name,
+                flashing.chip.flash_size
+            );
             log::info!("Firmware size: {}", binary.len());
+
+            // The CH585 requires WRITE_CONFIG and all subsequent flash
+            // operations to remain in this exact transport session.
+            let ch585_session = if is_ch585 {
+                Some(flashing.prepare_ch585_isp_flash()?)
+            } else {
+                None
+            };
 
             if *no_erase {
                 log::warn!("Skipping erase");
             } else {
                 log::info!("Erasing...");
-                let sectors = binary.len() / SECTOR_SIZE + 1;
+                let sectors = if is_ch585 {
+                    binary.len().div_ceil(SECTOR_SIZE)
+                } else {
+                    binary.len() / SECTOR_SIZE + 1
+                };
                 flashing.erase_code(sectors as u32)?;
 
                 sleep(Duration::from_secs(1));
@@ -250,7 +280,11 @@ fn main() -> Result<()> {
             }
 
             log::info!("Writing to code flash...");
-            flashing.flash(&binary)?;
+            if let Some(ref session) = ch585_session {
+                flashing.flash_prepared_ch585(&binary, session)?;
+            } else {
+                flashing.flash(&binary)?;
+            }
             sleep(Duration::from_millis(500));
 
             if *no_verify {
@@ -261,22 +295,58 @@ fn main() -> Result<()> {
                 log::info!("Verify OK");
             }
 
+            if let Some(session) = ch585_session {
+                flashing.restore_ch585_flash_config(session)?;
+                log::info!("CH585 pre-flash configuration restored after verify");
+            }
+
             if *no_reset {
                 log::warn!("Skipping reset");
             } else {
-                log::info!("Now reset device and skip any communication errors");
-                let _ = flashing.reset();
+                if is_ch585 {
+                    log::info!("Resetting CH585 after verified configuration restore");
+                    flashing.reset()?;
+                } else {
+                    log::info!("Now reset device and skip any communication errors");
+                    let _ = flashing.reset();
+                }
             }
         }
         Some(Commands::Verify { path }) => {
             let mut flashing = get_flashing(&cli)?;
 
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
-            extend_firmware_to_sector_boundary(&mut binary);
+            let is_ch585 = flashing.chip.name == "CH585";
+            if is_ch585 {
+                wchisp::ch585::pad_firmware(&mut binary);
+            } else {
+                extend_firmware_to_sector_boundary(&mut binary);
+            }
+            anyhow::ensure!(!binary.is_empty(), "firmware image is empty");
+            anyhow::ensure!(
+                binary.len() <= flashing.chip.flash_size as usize,
+                "firmware image is {} bytes but {} code flash is {} bytes",
+                binary.len(),
+                flashing.chip.name,
+                flashing.chip.flash_size
+            );
             log::info!("Firmware size: {}", binary.len());
+            let ch585_session = if is_ch585 {
+                Some(flashing.prepare_ch585_isp_flash()?)
+            } else {
+                None
+            };
             log::info!("Verifying...");
-            flashing.verify(&binary)?;
+            if let Some(ref session) = ch585_session {
+                flashing.verify_prepared_ch585(&binary, session)?;
+            } else {
+                flashing.verify(&binary)?;
+            }
             log::info!("Verify OK");
+            if let Some(session) = ch585_session {
+                flashing.restore_ch585_flash_config(session)?;
+                log::info!("CH585 pre-verify configuration restored");
+            }
         }
         Some(Commands::Eeprom { command }) => {
             let mut flashing = get_flashing(&cli)?;

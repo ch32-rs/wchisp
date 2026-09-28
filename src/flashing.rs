@@ -6,10 +6,11 @@ use indicatif::ProgressBar;
 use scroll::{Pread, Pwrite, LE};
 
 use crate::{
+    ch585::{self, FlashSession},
     constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
     device::{parse_number, ChipDB},
     transport::{SerialTransport, UsbTransport},
-    Baudrate, Chip, Command, Transport,
+    Baudrate, Chip, Command, Response, Transport,
 };
 
 pub struct Flashing<'a> {
@@ -197,7 +198,11 @@ impl<'a> Flashing<'a> {
     pub fn reset(&mut self) -> Result<()> {
         let isp_end = Command::isp_end(1);
         let resp = self.transport.transfer(isp_end)?;
-        anyhow::ensure!(resp.is_ok(), "isp_end failed");
+        if self.is_ch585() {
+            self.ensure_operation_ok(resp, "isp_end")?;
+        } else {
+            anyhow::ensure!(resp.is_ok(), "isp_end failed");
+        }
 
         log::info!("Device reset");
         Ok(())
@@ -206,14 +211,11 @@ impl<'a> Flashing<'a> {
     // unprotect -> erase -> flash -> verify -> reset
     /// Program the code flash.
     pub fn flash(&mut self, raw: &[u8]) -> Result<()> {
-        let key = self.xor_key();
-        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        let key = self.begin_encrypted_session()?;
+        self.flash_with_key(raw, key)
+    }
 
-        // NOTE: use all-zero key seed for now.
-        let isp_key = Command::isp_key(vec![0; 0x1e]);
-        let resp = self.transport.transfer(isp_key)?;
-        anyhow::ensure!(resp.is_ok(), "isp_key failed");
-        anyhow::ensure!(resp.payload()[0] == key_checksum, "isp_key checksum failed");
+    fn flash_with_key(&mut self, raw: &[u8], key: [u8; 8]) -> Result<()> {
 
         const CHUNK: usize = 56;
         let mut address = 0x0;
@@ -260,13 +262,11 @@ impl<'a> Flashing<'a> {
     }
 
     pub fn verify(&mut self, raw: &[u8]) -> Result<()> {
-        let key = self.xor_key();
-        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
-        // NOTE: use all-zero key seed for now.
-        let isp_key = Command::isp_key(vec![0; 0x1e]);
-        let resp = self.transport.transfer(isp_key)?;
-        anyhow::ensure!(resp.is_ok(), "isp_key failed");
-        anyhow::ensure!(resp.payload()[0] == key_checksum, "isp_key checksum failed");
+        let key = self.begin_encrypted_session()?;
+        self.verify_with_key(raw, key)
+    }
+
+    fn verify_with_key(&mut self, raw: &[u8], key: [u8; 8]) -> Result<()> {
 
         const CHUNK: usize = 56;
         let mut address = 0x0;
@@ -310,6 +310,10 @@ impl<'a> Flashing<'a> {
     }
 
     pub fn enable_debug(&mut self) -> Result<()> {
+        if self.is_ch585() {
+            return self.set_ch585_debug(true);
+        }
+
         let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
         let resp = self.transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
@@ -344,6 +348,10 @@ impl<'a> Flashing<'a> {
     }
 
     pub fn disable_debug(&mut self) -> Result<()> {
+        if self.is_ch585() {
+            return self.set_ch585_debug(false);
+        }
+
         let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
         let resp = self.transport.transfer(read_conf)?;
         anyhow::ensure!(resp.is_ok(), "read_config failed");
@@ -428,6 +436,9 @@ impl<'a> Flashing<'a> {
             .transport
             .transfer_with_wait(cmd, Duration::from_millis(300))?;
         anyhow::ensure!(resp.is_ok(), "program 0x{:08x} failed", address);
+        if self.is_ch585() {
+            self.ensure_operation_ok(resp, &format!("program 0x{address:08x}"))?;
+        }
         Ok(())
     }
 
@@ -448,8 +459,12 @@ impl<'a> Flashing<'a> {
         let padding = rand::random();
         let cmd = Command::verify(address, padding, xored.collect());
         let resp = self.transport.transfer(cmd)?;
-        anyhow::ensure!(resp.is_ok(), "verify response failed");
-        anyhow::ensure!(resp.payload()[0] == 0x00, "Verify failed, mismatch");
+        if self.is_ch585() {
+            self.ensure_operation_ok(resp, &format!("verify 0x{address:08x}"))?;
+        } else {
+            anyhow::ensure!(resp.is_ok(), "verify response failed");
+            anyhow::ensure!(resp.payload()[0] == 0x00, "Verify failed, mismatch");
+        }
         Ok(())
     }
 
@@ -466,7 +481,11 @@ impl<'a> Flashing<'a> {
         let resp = self
             .transport
             .transfer_with_wait(erase, Duration::from_millis(5000))?;
-        anyhow::ensure!(resp.is_ok(), "erase failed");
+        if self.is_ch585() {
+            self.ensure_operation_ok(resp, "erase")?;
+        } else {
+            anyhow::ensure!(resp.is_ok(), "erase failed");
+        }
 
         log::info!("Erased {} code flash sectors", sectors);
         Ok(())
@@ -531,6 +550,151 @@ impl<'a> Flashing<'a> {
         Ok(())
     }
 
+    /// Apply the CH585 BootROM programming configuration without closing the
+    /// current ISP transport session.
+    ///
+    /// The CH585 BootROM rejects Program commands while CFG_DEBUG_EN or
+    /// CFG_ROM_READ is set. This clears only those bits, writes the complete
+    /// 12-byte config, and verifies the same-session readback. Retain the
+    /// returned transition and restore it only after a full successful
+    /// code-flash verify.
+    pub fn prepare_ch585_isp_flash(&mut self) -> Result<FlashSession> {
+        anyhow::ensure!(
+            self.is_ch585(),
+            "CH585 ISP preparation requires a CH585 target"
+        );
+        let transition = ch585::prepare_flash_config(self.read_ch585_config()?)?;
+        self.write_and_verify_ch585_config(transition.programmed, "prepare CH585 ISP flash")?;
+        // Establish the key before erase so preparation and programming remain
+        // in one validated ISP session. flash() establishes it again before
+        // Program, preserving the existing API behavior for direct callers.
+        let key = self.begin_encrypted_session()?;
+        Ok(FlashSession {
+            config: transition,
+            key,
+        })
+    }
+
+    /// Program CH585 using the key established before erase by
+    /// `prepare_ch585_isp_flash`; do not issue another ISP_KEY in between.
+    pub fn flash_prepared_ch585(&mut self, raw: &[u8], session: &FlashSession) -> Result<()> {
+        anyhow::ensure!(
+            self.is_ch585(),
+            "prepared CH585 flash requires a CH585 target"
+        );
+        self.flash_with_key(raw, session.key)
+    }
+
+    /// Verify CH585 using an already established standalone verify session.
+    pub fn verify_prepared_ch585(&mut self, raw: &[u8], session: &FlashSession) -> Result<()> {
+        anyhow::ensure!(
+            self.is_ch585(),
+            "prepared CH585 verify requires a CH585 target"
+        );
+        self.verify_with_key(raw, session.key)
+    }
+
+    /// Restore the exact CH585 configuration captured before programming.
+    /// Call this only after code-flash verification succeeds.
+    pub fn restore_ch585_flash_config(
+        &mut self,
+        session: FlashSession,
+    ) -> Result<()> {
+        anyhow::ensure!(
+            self.is_ch585(),
+            "CH585 config restoration requires a CH585 target"
+        );
+        anyhow::ensure!(
+            self.read_ch585_config()? == session.config.programmed,
+            "CH585 config changed before post-verify restoration"
+        );
+        if session.config.requires_restore() {
+            self.write_and_verify_ch585_config(
+                session.config.original,
+                "restore CH585 post-verify config",
+            )?;
+        }
+        Ok(())
+    }
+
+    fn is_ch585(&self) -> bool {
+        self.chip.name == "CH585" && self.chip.chip_id == 0x85 && self.chip.device_type == 0x16
+    }
+
+    fn read_ch585_config(&mut self) -> Result<[u8; ch585::CONFIG_BYTES]> {
+        let response = self
+            .transport
+            .transfer(Command::read_config(ch585::CONFIG_MASK))?;
+        anyhow::ensure!(response.is_ok(), "CH585 read_config failed: {response:?}");
+        ch585::parse_config_payload(response.payload())
+    }
+
+    fn write_and_verify_ch585_config(
+        &mut self,
+        config: [u8; ch585::CONFIG_BYTES],
+        operation: &str,
+    ) -> Result<()> {
+        let response = self.transport.transfer(Command::write_config(
+            ch585::CONFIG_MASK,
+            config.to_vec(),
+        ))?;
+        self.ensure_operation_ok(response, operation)?;
+        // The CH585 BootROM needs the configuration write to settle before
+        // the readback and encrypted flash session are established.
+        std::thread::sleep(Duration::from_millis(20));
+        anyhow::ensure!(
+            self.read_ch585_config()? == config,
+            "{operation} readback mismatch"
+        );
+        Ok(())
+    }
+
+    fn set_ch585_debug(&mut self, enabled: bool) -> Result<()> {
+        let requested = ch585::set_debug(self.read_ch585_config()?, enabled)?;
+        self.write_and_verify_ch585_config(
+            requested,
+            if enabled {
+                "enable CH585 debug"
+            } else {
+                "disable CH585 debug"
+            },
+        )
+    }
+
+    fn ensure_operation_ok(&self, response: Response, operation: &str) -> Result<()> {
+        anyhow::ensure!(response.is_ok(), "{operation} failed: {response:?}");
+        ch585::check_bootrom_status(response.payload(), operation)
+    }
+
+    fn begin_encrypted_session(&mut self) -> Result<[u8; 8]> {
+        let (payload, key) = if self.is_ch585() {
+            let generated = ch585::generate_isp_key(self.chip_uid(), self.chip.chip_id);
+            (generated.payload, generated.xor)
+        } else {
+            (vec![0; 0x1e], self.xor_key())
+        };
+        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        let response = self.transport.transfer(Command::isp_key(payload))?;
+        anyhow::ensure!(response.is_ok(), "isp_key failed: {response:?}");
+        if self.is_ch585() {
+            // CH58x BootROM revisions may return either zero or the derived
+            // key checksum in byte zero; byte one is the operation status.
+            anyhow::ensure!(
+                response.payload() == [key_checksum, 0] || response.payload() == [0, 0],
+                "CH585 isp_key checksum mismatch: expected {:02x}00, got {}",
+                key_checksum,
+                hex::encode(response.payload())
+            );
+        } else {
+            anyhow::ensure!(!response.payload().is_empty(), "isp_key returned no checksum");
+            anyhow::ensure!(
+                response.payload()[0] == key_checksum,
+                "isp_key checksum failed"
+            );
+        }
+        Ok(key)
+    }
+
     // NOTE: XOR key for all-zero key seed
     fn xor_key(&self) -> [u8; 8] {
         let checksum = self
@@ -564,5 +728,208 @@ impl<'a> Flashing<'a> {
             anyhow::ensure!(checked, "Chip UID checksum failed!");
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{cell::RefCell, collections::VecDeque, rc::Rc, time::Duration};
+
+    use super::*;
+    use crate::constants::commands;
+
+    const CH585_UID: [u8; 8] = [0x98, 0x5b, 0x29, 0x5a, 0x04, 0xdc, 0xc5, 0x91];
+    const DEBUG_ENABLED: [u8; ch585::CONFIG_BYTES] = [
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xdf, 0x3f, 0x0f, 0x45,
+    ];
+    const DEBUG_DISABLED: [u8; ch585::CONFIG_BYTES] = [
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x4f, 0x3f, 0x0f, 0x45,
+    ];
+    const DEBUG_ENABLED_ROM_READ_DISABLED: [u8; ch585::CONFIG_BYTES] = [
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x5f, 0x3f, 0x0f, 0x45,
+    ];
+
+    struct MockTransport {
+        requests: Rc<RefCell<Vec<Vec<u8>>>>,
+        responses: VecDeque<Vec<u8>>,
+    }
+
+    impl Transport for MockTransport {
+        fn send_raw(&mut self, raw: &[u8]) -> Result<()> {
+            self.requests.borrow_mut().push(raw.to_vec());
+            Ok(())
+        }
+
+        fn recv_raw(&mut self, _timeout: Duration) -> Result<Vec<u8>> {
+            self.responses
+                .pop_front()
+                .ok_or_else(|| anyhow::format_err!("mock response queue is empty"))
+        }
+    }
+
+    fn response(command: u8, payload: &[u8]) -> Vec<u8> {
+        let mut raw = vec![command, 0, payload.len() as u8, 0];
+        raw.extend_from_slice(payload);
+        raw
+    }
+
+    fn config_response(config: [u8; ch585::CONFIG_BYTES]) -> Vec<u8> {
+        let mut payload = vec![ch585::CONFIG_MASK, 0];
+        payload.extend_from_slice(&config);
+        response(commands::READ_CONFIG, &payload)
+    }
+
+    fn test_flashing(
+        chip_id: u8,
+        uid: Vec<u8>,
+        responses: Vec<Vec<u8>>,
+    ) -> (Flashing<'static>, Rc<RefCell<Vec<Vec<u8>>>>) {
+        let requests = Rc::new(RefCell::new(Vec::new()));
+        let transport = MockTransport {
+            requests: requests.clone(),
+            responses: responses.into(),
+        };
+        let chip = ChipDB::load().unwrap().find_chip(chip_id, 0x16).unwrap();
+        (
+            Flashing {
+                transport: Box::new(transport),
+                chip,
+                chip_uid: uid,
+                bootloader_version: [0, 2, 3, 0],
+                code_flash_protected: false,
+            },
+            requests,
+        )
+    }
+
+    #[test]
+    fn ch585_prepare_restore_and_reset_use_one_exact_session() {
+        let responses = vec![
+            config_response(DEBUG_ENABLED),
+            response(commands::WRITE_CONFIG, &[0, 0]),
+            config_response(DEBUG_DISABLED),
+            response(commands::ISP_KEY, &[0, 0]),
+            config_response(DEBUG_DISABLED),
+            response(commands::WRITE_CONFIG, &[0, 0]),
+            config_response(DEBUG_ENABLED),
+            response(commands::ISP_END, &[0, 0]),
+        ];
+        let (mut flashing, requests) = test_flashing(0x85, CH585_UID.to_vec(), responses);
+
+        let session = flashing.prepare_ch585_isp_flash().unwrap();
+        assert_eq!(session.config.original, DEBUG_ENABLED);
+        assert_eq!(session.config.programmed, DEBUG_DISABLED);
+        flashing.restore_ch585_flash_config(session).unwrap();
+        flashing.reset().unwrap();
+
+        let requests = requests.borrow();
+        assert_eq!(requests.len(), 8);
+        assert_eq!(requests[0], Command::read_config(ch585::CONFIG_MASK).into_raw().unwrap());
+        assert_eq!(requests[3][0], commands::ISP_KEY);
+        assert!((0x1e..=0x3c).contains(&usize::from(requests[3][1])));
+        assert!(requests[3][3..].iter().any(|byte| *byte != 0));
+        assert_eq!(requests[7], Command::isp_end(1).into_raw().unwrap());
+    }
+
+    #[test]
+    fn ch582_reset_keeps_accepting_the_existing_empty_payload() {
+        let responses = vec![response(commands::ISP_END, &[])];
+        let (mut flashing, requests) = test_flashing(0x82, vec![0; 8], responses);
+
+        flashing.reset().unwrap();
+
+        assert_eq!(
+            *requests.borrow(),
+            vec![Command::isp_end(1).into_raw().unwrap()]
+        );
+    }
+
+    #[test]
+    fn ch585_enable_debug_changes_only_the_debug_bit_and_reads_back() {
+        let responses = vec![
+            config_response(DEBUG_DISABLED),
+            response(commands::WRITE_CONFIG, &[0, 0]),
+            config_response(DEBUG_ENABLED_ROM_READ_DISABLED),
+        ];
+        let (mut flashing, requests) = test_flashing(0x85, CH585_UID.to_vec(), responses);
+
+        flashing.enable_debug().unwrap();
+
+        assert_eq!(
+            *requests.borrow(),
+            vec![
+                Command::read_config(ch585::CONFIG_MASK).into_raw().unwrap(),
+                Command::write_config(
+                    ch585::CONFIG_MASK,
+                    DEBUG_ENABLED_ROM_READ_DISABLED.to_vec(),
+                )
+                .into_raw()
+                .unwrap(),
+                Command::read_config(ch585::CONFIG_MASK).into_raw().unwrap(),
+            ]
+        );
+    }
+
+    #[test]
+    fn ch585_program_and_verify_keep_the_standard_packet_shape() {
+        let responses = vec![
+            response(commands::PROGRAM, &[0, 0]),
+            response(commands::VERIFY, &[0, 0]),
+        ];
+        let (mut ch585, requests) = test_flashing(0x85, CH585_UID.to_vec(), responses);
+
+        ch585.flash_chunk(0x20, &[0x11, 0x22], [0; 8]).unwrap();
+        ch585.verify_chunk(0x20, &[0x11, 0x22], [0; 8]).unwrap();
+
+        let requests = requests.borrow();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(requests[0][0], commands::PROGRAM);
+        assert_eq!(&requests[0][3..7], &0x20_u32.to_le_bytes());
+        assert_eq!(&requests[0][8..], &[0x11, 0x22]);
+        assert_eq!(requests[1][0], commands::VERIFY);
+        assert_eq!(&requests[1][3..7], &0x20_u32.to_le_bytes());
+        assert_eq!(&requests[1][8..], &[0x11, 0x22]);
+    }
+
+    #[test]
+    fn ch585_prepared_program_does_not_send_a_second_key_after_erase() {
+        let responses = vec![
+            config_response(DEBUG_DISABLED),
+            response(commands::WRITE_CONFIG, &[0, 0]),
+            config_response(DEBUG_DISABLED),
+            response(commands::ISP_KEY, &[0, 0]),
+            response(commands::ERASE, &[0, 0]),
+            response(commands::PROGRAM, &[0, 0]),
+            response(commands::PROGRAM, &[0, 0]),
+        ];
+        let (mut flashing, requests) = test_flashing(0x85, CH585_UID.to_vec(), responses);
+
+        let session = flashing.prepare_ch585_isp_flash().unwrap();
+        flashing.erase_code(8).unwrap();
+        flashing
+            .flash_prepared_ch585(&[0x11; 8], &session)
+            .unwrap();
+
+        let requests = requests.borrow();
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|request| request[0] == commands::ISP_KEY)
+                .count(),
+            1
+        );
+        let sequence: Vec<u8> = requests.iter().map(|request| request[0]).collect();
+        assert_eq!(
+            sequence,
+            [
+                commands::READ_CONFIG,
+                commands::WRITE_CONFIG,
+                commands::READ_CONFIG,
+                commands::ISP_KEY,
+                commands::ERASE,
+                commands::PROGRAM,
+                commands::PROGRAM,
+            ]
+        );
     }
 }
