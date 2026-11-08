@@ -31,7 +31,8 @@ config_registers:
   - offset: 0x08
     name: USER_CFG
     description: User config register
-    reset: 0x4FFF0FD5
+    reset: 0x4FFF0F4D
+    enable_debug: 0x4FFF0FDD
     type: u32
     fields:
       - bit_range: [2, 0]
