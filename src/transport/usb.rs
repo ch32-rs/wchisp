@@ -5,6 +5,8 @@ use anyhow::Result;
 use rusb::{Context, DeviceHandle, UsbContext};
 
 use super::Transport;
+use anyhow::Context as _;
+
 
 const ENDPOINT_OUT: u8 = 0x02;
 const ENDPOINT_IN: u8 = 0x82;
@@ -128,7 +130,8 @@ impl UsbTransport {
             anyhow::bail!("USB Endpoints not found");
         }
 
-        device_handle.set_active_configuration(1)?;
+        device_handle.set_active_configuration(1).context(
+            "Failed to select USB configuration 1; Is the bootloader running?")?;
         let _config = device.active_config_descriptor()?;
         let _descriptor = device.device_descriptor()?;
 
