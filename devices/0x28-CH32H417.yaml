@@ -1,0 +1,73 @@
+---
+name: CH32H417 Series
+mcu_type: 0x18
+device_type: 0x28
+support_net: false
+support_usb: true
+support_serial: true
+description: CH32H417 (RISC-V5F + V3F Dual core) Series
+config_registers:
+  - offset: 0x00
+    name: RDPR_USER
+    description: RDPR, nRDPR, USER, nUSER
+    reset: 0x00FF5AA5
+    fields:
+      - bit_range: [7, 0]
+        name: RDPR
+        description: Read Protection. 0xA5 for unprotected, otherwise read-protected(ignoring WRP)
+        explanation:
+          0xa5: Unprotected
+          _: Protected
+      # byte 2, [0:0] + 16
+      - bit_range: [16, 16]
+        name: IWDG_SW
+        description: Independent watchdog (IWDG) hardware enable
+        explanation:
+          1: IWDG enabled by the software, and disabled by hardware
+          0: IWDG enabled by the hardware (determined by the LSI clock)
+      # [6:6] + 16
+      - bit_range: [22, 22]
+        name: USBFSDLEN
+        description: BOOT enable USBFS download functionality
+        explanation:
+          1: Enable
+          0: Disable
+      # [7:7] + 16
+      - bit_range: [23, 23]
+        name: USARTDLEN
+        description: BOOT enable USART keyless download functionality
+        explanation:
+          1: Enable
+          0: Disable
+  - offset: 0x04
+    name: DATA
+    description: Customizable 2 byte data, DATA0, nDATA0, DATA1, nDATA1
+    reset: 0xFF00FF00
+    type: u32
+    fields:
+      - bit_range: [7, 0]
+        name: DATA0
+      - bit_range: [23, 16]
+        name: DATA1
+  - offset: 0x08
+    name: WRP01
+    # Each bit represents 4K bytes (16 pages) to store the write protection status
+    description: Flash memory write protection status
+    type: u32
+    reset: 0xFFFFFFFF
+    explanation:
+      0xFFFFFFFF: Unprotected
+      _: Some 4K sections are protected
+  - offset: 0x0c
+    name: WRP23
+    # Each bit represents 4K bytes (16 pages) to store the write protection status
+    description: Flash memory write protection status
+    type: u32
+    reset: 0xFFFFFFFF
+    explanation:
+      0xFFFFFFFF: Unprotected
+      _: Some 4K sections are protected
+variants:
+  - name: CH32H417QEU6
+    chip_id: 0x70
+    flash_size: 960K 
