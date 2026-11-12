@@ -40,8 +40,14 @@ struct Cli {
     baudrate: Option<Baudrate>,
 
     /// Retry scan for certain seconds, helpful on slow USB devices
-    #[arg(long, short, default_value = "0")]
+    #[arg(long, short, default_value = "0", conflicts_with = "wait")]
     retry: u32,
+
+    /// Wait indefinitely for the bootloader to enumerate before operating on it.
+    /// Useful when the bootloader is only present for a short window: launch
+    /// wchisp first, then trigger the bootloader on the target.
+    #[arg(long, short, conflicts_with = "retry")]
+    wait: bool,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -147,31 +153,10 @@ fn main() -> Result<()> {
         );
     }
 
-    if cli.retry > 0 {
-        if !cli.usb && !cli.serial {
-            log::warn!("No transport method specified (--usb or --serial); skipping retry logic.");
-        } else {
-            log::info!("Retrying scan for {} seconds", cli.retry);
-            let start_time = std::time::Instant::now();
-            while start_time.elapsed().as_secs() < cli.retry as u64 {
-                if cli.usb {
-                    let ndevices = UsbTransport::scan_devices()?;
-                    if ndevices > 0 {
-                        break;
-                    }
-                } else if cli.serial {
-                    let ports = SerialTransport::scan_ports()?;
-                    if !ports.is_empty() {
-                        break;
-                    }
-                }
-                sleep(Duration::from_millis(100));
-            }
-        }
-    }
-
     match &cli.command {
         None | Some(Commands::Probe {}) => {
+            wait_for_device(&cli)?;
+
             if cli.usb {
                 let ndevices = UsbTransport::scan_devices()?;
                 log::info!(
@@ -230,12 +215,14 @@ fn main() -> Result<()> {
             no_verify,
             no_reset,
         }) => {
+            // Read the firmware before touching the device, so a bad path fails
+            // fast instead of after waiting for (and consuming) the bootloader window.
+            let mut binary = wchisp::format::read_firmware_from_file(path)?;
+            extend_firmware_to_sector_boundary(&mut binary);
+
             let mut flashing = get_flashing(&cli)?;
 
             flashing.dump_info()?;
-
-            let mut binary = wchisp::format::read_firmware_from_file(path)?;
-            extend_firmware_to_sector_boundary(&mut binary);
             log::info!("Firmware size: {}", binary.len());
 
             if *no_erase {
@@ -269,10 +256,11 @@ fn main() -> Result<()> {
             }
         }
         Some(Commands::Verify { path }) => {
-            let mut flashing = get_flashing(&cli)?;
-
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
             extend_firmware_to_sector_boundary(&mut binary);
+
+            let mut flashing = get_flashing(&cli)?;
+
             log::info!("Firmware size: {}", binary.len());
             log::info!("Verifying...");
             flashing.verify(&binary)?;
@@ -379,12 +367,83 @@ fn extend_firmware_to_sector_boundary(buf: &mut Vec<u8>) {
     }
 }
 
-fn get_flashing(cli: &Cli) -> Result<Flashing<'_>> {
+/// Poll interval while waiting for the bootloader to show up.
+const POLL_INTERVAL: Duration = Duration::from_millis(100);
+/// After the bootloader is detected, keep retrying to open it for this long.
+/// Covers the gap between enumeration and the OS finishing device setup
+/// (e.g. udev applying permissions on Linux).
+const OPEN_RETRY_WINDOW: Duration = Duration::from_secs(2);
+
+/// Whether the requested device is currently present on the selected transport.
+fn device_present(cli: &Cli) -> Result<bool> {
+    if cli.usb {
+        let ndevices = UsbTransport::scan_devices()?;
+        Ok(ndevices > cli.device.unwrap_or(0))
+    } else if cli.serial {
+        let ports = SerialTransport::scan_ports()?;
+        Ok(match &cli.port {
+            Some(port) => ports.iter().any(|p| p == port),
+            None => !ports.is_empty(),
+        })
+    } else {
+        unreachable!("No transport specified");
+    }
+}
+
+/// Block until the device shows up, honoring `--wait` (unbounded) or
+/// `--retry N` (bounded). Returns immediately if neither is given.
+///
+/// Returns whether the device was actually detected.
+fn wait_for_device(cli: &Cli) -> Result<bool> {
+    let deadline = if cli.wait {
+        log::info!("Waiting for the bootloader to enumerate (Ctrl-C to abort)...");
+        None
+    } else if cli.retry > 0 {
+        log::info!("Retrying scan for {} seconds", cli.retry);
+        Some(std::time::Instant::now() + Duration::from_secs(cli.retry as u64))
+    } else {
+        return Ok(false);
+    };
+
+    loop {
+        if device_present(cli)? {
+            log::info!("Bootloader detected");
+            return Ok(true);
+        }
+        if deadline.is_some_and(|deadline| std::time::Instant::now() >= deadline) {
+            log::warn!("Timed out waiting for the bootloader; trying anyway");
+            return Ok(false);
+        }
+        sleep(POLL_INTERVAL);
+    }
+}
+
+fn open_flashing(cli: &Cli) -> Result<Flashing<'_>> {
     if cli.usb {
         Flashing::new_from_usb(cli.device)
     } else if cli.serial {
         Flashing::new_from_serial(cli.port.as_deref(), cli.baudrate)
     } else {
         unreachable!("No transport specified");
+    }
+}
+
+fn get_flashing(cli: &Cli) -> Result<Flashing<'_>> {
+    if !wait_for_device(cli)? {
+        return open_flashing(cli);
+    }
+
+    // The bootloader was just detected; the OS may still be finishing device
+    // setup, so retry the open briefly rather than losing the bootloader window.
+    let deadline = std::time::Instant::now() + OPEN_RETRY_WINDOW;
+    loop {
+        match open_flashing(cli) {
+            Ok(flashing) => return Ok(flashing),
+            Err(e) if std::time::Instant::now() < deadline => {
+                log::debug!("Open failed ({e}), retrying...");
+                sleep(POLL_INTERVAL);
+            }
+            Err(e) => return Err(e),
+        }
     }
 }
