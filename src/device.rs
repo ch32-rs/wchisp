@@ -164,6 +164,7 @@ impl ChipDB {
             serde_yaml::from_str(include_str!("../devices/0x24-CH643.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x25-CH32L103.yaml"))?,
             serde_yaml::from_str(include_str!("../devices/0x26-CH32V317.yaml"))?,
+            serde_yaml::from_str(include_str!("../devices/0x28-CH32H417.yaml"))?,
         ];
         for family in &families {
             family.validate()?;
