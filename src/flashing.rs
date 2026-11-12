@@ -6,7 +6,7 @@ use indicatif::ProgressBar;
 use scroll::{Pread, Pwrite, LE};
 
 use crate::{
-    constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR},
+    constants::{CFG_MASK_ALL, CFG_MASK_RDPR_USER_DATA_WPR, DEFAULT_SECTOR_SIZE},
     device::{parse_number, ChipDB},
     transport::{SerialTransport, UsbTransport},
     Baudrate, Chip, Command, Transport,
@@ -18,7 +18,7 @@ pub struct Flashing<'a> {
     /// Chip unique identifier
     chip_uid: Vec<u8>,
     // BTVER
-    bootloader_version: [u8; 4],
+    bootloader_version: u32,
     code_flash_protected: bool,
 }
 
@@ -66,7 +66,7 @@ impl<'a> Flashing<'a> {
             transport: Box::new(transport),
             chip,
             chip_uid,
-            bootloader_version: btver,
+            bootloader_version: u32::from_be_bytes(btver),
             code_flash_protected,
         };
         f.check_chip_uid()?;
@@ -145,6 +145,9 @@ impl<'a> Flashing<'a> {
                 self.chip.flash_size / 1024,
             );
         }
+        if self.chip.sector_size != DEFAULT_SECTOR_SIZE {
+            log::info!("Sector size: {}", self.chip.sector_size);
+        }
         log::info!(
             "Chip UID: {}",
             self.chip_uid
@@ -154,12 +157,9 @@ impl<'a> Flashing<'a> {
                 .join("-")
         );
         log::info!(
-            "BTVER(bootloader ver): {:x}{:x}.{:x}{:x}",
-            self.bootloader_version[0],
-            self.bootloader_version[1],
-            self.bootloader_version[2],
-            self.bootloader_version[3]
-        );
+            "BTVER(bootloader ver): {:x}.{:x}",
+            self.bootloader_version >> 16,
+            self.bootloader_version & 0xFFFF);
 
         if self.chip.support_code_flash_protect() {
             log::info!("Code Flash protected: {}", self.code_flash_protected);
@@ -207,7 +207,7 @@ impl<'a> Flashing<'a> {
     /// Program the code flash.
     pub fn flash(&mut self, raw: &[u8]) -> Result<()> {
         let key = self.xor_key();
-        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        let key_checksum = self.calc_key_checksum(key);
 
         // NOTE: use all-zero key seed for now.
         let isp_key = Command::isp_key(vec![0; 0x1e]);
@@ -235,7 +235,7 @@ impl<'a> Flashing<'a> {
 
     pub fn write_eeprom(&mut self, raw: &[u8]) -> Result<()> {
         let key = self.xor_key();
-        // let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        // let key_checksum = self.calc_key_checksum(key);
 
         // NOTE: use all-zero key seed for now.
         let isp_key = Command::isp_key(vec![0; 0x1e]);
@@ -261,7 +261,7 @@ impl<'a> Flashing<'a> {
 
     pub fn verify(&mut self, raw: &[u8]) -> Result<()> {
         let key = self.xor_key();
-        let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+        let key_checksum = self.calc_key_checksum(key);
         // NOTE: use all-zero key seed for now.
         let isp_key = Command::isp_key(vec![0; 0x1e]);
         let resp = self.transport.transfer(isp_key)?;
@@ -476,7 +476,7 @@ impl<'a> Flashing<'a> {
         if self.chip.eeprom_size == 0 {
             anyhow::bail!("chip doesn't support data EEPROM");
         }
-        let sectors = (self.chip.eeprom_size / 1024).max(1) as u16;
+        let sectors = (self.chip.eeprom_size / self.chip.sector_size).max(1) as u16;
         let erase = Command::data_erase(sectors as _);
         let resp = self
             .transport
@@ -543,9 +543,19 @@ impl<'a> Flashing<'a> {
         key
     }
 
+    fn calc_key_checksum(&self, key: [u8; 8]) -> u8 {
+        // If the bootloader version is 2.7 or later, 0 will be always sent by the device.
+        if self.bootloader_version >= 0x00020700 {
+            0
+        } else {
+            let key_checksum = key.iter().fold(0_u8, |acc, &x| acc.overflowing_add(x).0);
+            key_checksum
+        }
+    }
+
     pub fn chip_uid(&self) -> &[u8] {
         let uid_size = self.chip.uid_size();
-        //if self.bootloader_version < [0, 2, 4, 0] {
+        //if self.bootloader_version < 0x00020400 {
         //    uid_size = 4
         //}
         &self.chip_uid[..uid_size]
