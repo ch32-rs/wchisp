@@ -99,9 +99,14 @@ enum ConfigCommands {
     EnableDebug {},
     /// Disable SWD mode(simulation mode)
     DisableDebug {},
-    /// Set config register to new value
+    /// Set the RDPR/USER/DATA/WPR config registers to a raw value. The value is
+    /// the full config block as hex, written back verbatim. It is the leading
+    /// part (normally 12 bytes) of what `config info` prints as "Current config
+    /// registers"; the rest of that string is the read-only bootloader version
+    /// and chip UID and must be left off. Read it, change the bytes you need,
+    /// write it back.
     Set {
-        /// New value of the config register
+        /// New config block, as hex (optionally `0x`-prefixed)
         #[arg(value_name = "HEX")]
         value: String,
     },
@@ -358,9 +363,7 @@ fn main() -> Result<()> {
                     log::info!("Debug mode disabled");
                 }
                 Some(ConfigCommands::Set { value }) => {
-                    // flashing.write_config(value)?;
-                    log::info!("setting cfg value {}", value);
-                    unimplemented!()
+                    flashing.set_config(value)?;
                 }
                 Some(ConfigCommands::Unprotect {}) => {
                     flashing.unprotect(true)?;
