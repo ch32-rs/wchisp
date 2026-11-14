@@ -310,9 +310,11 @@ impl<'a> Flashing<'a> {
     }
 
     /// Write the RDPR/USER/DATA/WPR config block verbatim from a hex string.
-    /// `hex_value` is the whole block (the value `config info` prints as "Current
-    /// config registers"), optionally `0x`-prefixed; it must be the same length as
-    /// the block the chip reports. Every byte is written as given -- the caller is
+    /// `hex_value` is the whole block, optionally `0x`-prefixed; it must be the
+    /// same length as the block the chip reports. That is the leading part of what
+    /// `config info` prints as "Current config registers" -- `config info` reads
+    /// with `CFG_MASK_ALL`, so its output also carries the bootloader version and
+    /// UID after the block. Every byte is written as given -- the caller is
     /// responsible for forming a valid block (read it, change what's needed, write
     /// it back). This is the generic counterpart to `reset_config` / `*_debug`,
     /// which only touch specific fields.
