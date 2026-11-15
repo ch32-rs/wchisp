@@ -309,6 +309,54 @@ impl<'a> Flashing<'a> {
         Ok(())
     }
 
+    /// Write the RDPR/USER/DATA/WPR config block verbatim from a hex string.
+    /// `hex_value` is the whole block, optionally `0x`-prefixed; it must be the
+    /// same length as the block the chip reports. That is the leading part of what
+    /// `config info` prints as "Current config registers" -- `config info` reads
+    /// with `CFG_MASK_ALL`, so its output also carries the bootloader version and
+    /// UID after the block. Every byte is written as given -- the caller is
+    /// responsible for forming a valid block (read it, change what's needed, write
+    /// it back). This is the generic counterpart to `reset_config` / `*_debug`,
+    /// which only touch specific fields.
+    pub fn set_config(&mut self, hex_value: &str) -> Result<()> {
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+
+        let current = resp.payload()[2..].to_vec();
+        log::info!("Current config registers: {}", hex::encode(&current));
+
+        let cleaned = hex_value
+            .trim()
+            .trim_start_matches("0x")
+            .trim_start_matches("0X");
+        let new = hex::decode(cleaned)
+            .map_err(|e| anyhow::anyhow!("invalid hex config value '{}': {}", hex_value, e))?;
+        anyhow::ensure!(
+            new.len() == current.len(),
+            "config block must be {} bytes ({} hex chars); got {} bytes",
+            current.len(),
+            current.len() * 2,
+            new.len()
+        );
+
+        log::info!("New config registers:     {}", hex::encode(&new));
+        let write_conf = Command::write_config(CFG_MASK_RDPR_USER_DATA_WPR, new);
+        let resp = self.transport.transfer(write_conf)?;
+        anyhow::ensure!(resp.is_ok(), "write_config failed");
+
+        // read back
+        let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
+        let resp = self.transport.transfer(read_conf)?;
+        anyhow::ensure!(resp.is_ok(), "read_config failed");
+        log::info!(
+            "Config registers after write: {}",
+            hex::encode(&resp.payload()[2..])
+        );
+
+        Ok(())
+    }
+
     pub fn enable_debug(&mut self) -> Result<()> {
         let read_conf = Command::read_config(CFG_MASK_RDPR_USER_DATA_WPR);
         let resp = self.transport.transfer(read_conf)?;
