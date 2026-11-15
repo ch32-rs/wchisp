@@ -1,8 +1,8 @@
 //! Serial Transportation.
-use std::{fmt::Display, io::Read, time::Duration};
+use std::{fmt::Display, io::Read, thread::sleep, time::Duration};
 
 use anyhow::{Error, Ok, Result};
-use clap::{builder::PossibleValue, ValueEnum};
+use clap::{ValueEnum, builder::PossibleValue};
 use scroll::Pread;
 use serialport::SerialPort;
 
@@ -70,6 +70,7 @@ impl SerialTransport {
 
         let mut transport = SerialTransport { serial_port: port };
         transport.set_baudrate(baudrate)?;
+        transport.enter_bootloader()?;
 
         Ok(transport)
     }
@@ -101,6 +102,28 @@ impl SerialTransport {
                 self.serial_port.set_baud_rate(baudrate.into())?;
             }
         }
+
+        Ok(())
+    }
+
+    pub fn enter_bootloader(&mut self) -> Result<()> {
+        // Known idle state (helps because some drivers toggle lines on open)
+        self.serial_port.write_data_terminal_ready(false)?;
+        self.serial_port.write_request_to_send(false)?;
+        sleep(Duration::from_millis(30));
+
+        // Hold BOOT (DTR)
+        self.serial_port.write_data_terminal_ready(false)?;
+        sleep(Duration::from_millis(30));
+
+        // Reset pulse (RTS)
+        self.serial_port.write_request_to_send(true)?;
+        sleep(Duration::from_millis(100));
+        self.serial_port.write_request_to_send(false)?;
+        sleep(Duration::from_millis(100));
+
+        // Release BOOT
+        self.serial_port.write_data_terminal_ready(true)?;
 
         Ok(())
     }
