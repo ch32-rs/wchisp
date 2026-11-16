@@ -23,6 +23,7 @@ variants:
   - name: <string:CHXXX, unique id of the chip, with or without variant surfix>
     chip_id: 0x30
     alt_chip_ids: ["ALL"] # special fix to probe all chip variants
+    sector_size: 1024 # optional
     flash_size: 64K # 0x10000, 64KiB, 64KB, 64K
     eeprom_size: 32K
     eeprom_start_addr: 0x0

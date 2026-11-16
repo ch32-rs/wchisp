@@ -1,7 +1,7 @@
 //! Constants about protocol and devices.
 
 pub const MAX_PACKET_SIZE: usize = 64;
-pub const SECTOR_SIZE: usize = 1024;
+pub const DEFAULT_SECTOR_SIZE: u32 = 1024;
 
 /// All readable and writable registers.
 /// - `RDPR`: Read Protection

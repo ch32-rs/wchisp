@@ -6,7 +6,6 @@ use clap::{Parser, Subcommand};
 use hxdmp::hexdump;
 
 use wchisp::{
-    constants::SECTOR_SIZE,
     transport::{SerialTransport, UsbTransport},
     Baudrate, Flashing,
 };
@@ -220,7 +219,7 @@ fn main() -> Result<()> {
         Some(Commands::Erase {}) => {
             let mut flashing = get_flashing(&cli)?;
 
-            let sectors = flashing.chip.flash_size / 1024;
+            let sectors = flashing.chip.flash_size / flashing.chip.sector_size;
             flashing.erase_code(sectors)?;
         }
         // WRITE_CONFIG => READ_CONFIG => ISP_KEY => ERASE => PROGRAM => VERIFY => RESET
@@ -235,14 +234,14 @@ fn main() -> Result<()> {
             flashing.dump_info()?;
 
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
-            extend_firmware_to_sector_boundary(&mut binary);
+            extend_firmware_to_sector_boundary(&mut binary, flashing.chip.sector_size as usize);
             log::info!("Firmware size: {}", binary.len());
 
             if *no_erase {
                 log::warn!("Skipping erase");
             } else {
                 log::info!("Erasing...");
-                let sectors = binary.len() / SECTOR_SIZE + 1;
+                let sectors = binary.len().div_ceil(flashing.chip.sector_size as usize);
                 flashing.erase_code(sectors as u32)?;
 
                 sleep(Duration::from_secs(1));
@@ -272,7 +271,7 @@ fn main() -> Result<()> {
             let mut flashing = get_flashing(&cli)?;
 
             let mut binary = wchisp::format::read_firmware_from_file(path)?;
-            extend_firmware_to_sector_boundary(&mut binary);
+            extend_firmware_to_sector_boundary(&mut binary, flashing.chip.sector_size as usize);
             log::info!("Firmware size: {}", binary.len());
             log::info!("Verifying...");
             flashing.verify(&binary)?;
@@ -372,9 +371,9 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn extend_firmware_to_sector_boundary(buf: &mut Vec<u8>) {
-    if buf.len() % 1024 != 0 {
-        let remain = 1024 - (buf.len() % 1024);
+fn extend_firmware_to_sector_boundary(buf: &mut Vec<u8>, ss: usize) {
+    if buf.len() % ss != 0 {
+        let remain = ss - (buf.len() % ss);
         buf.extend_from_slice(&vec![0; remain]);
     }
 }
